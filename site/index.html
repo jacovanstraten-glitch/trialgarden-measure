@@ -1,17 +1,1259 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#17372e" />
-    <link rel="manifest" href="./mobile-manifest.webmanifest" />
-    <link rel="icon" href="./icon-192.png" />
-    <title>TrialGarden Measure</title>
-    <script type="module" crossorigin src="./assets/app-6LDI9jDh.js"></script>
-    <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-wMinxHhO.js">
-    <link rel="stylesheet" crossorigin href="./assets/app-BE933fPY.css">
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#00554B">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="TG Field">
+<link rel="manifest" href="./mobile-manifest.webmanifest">
+<link rel="icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<title>Trial Garden Field</title>
+<script src="https://alcdn.msauth.net/browser/2.35.0/js/msal-browser.min.js" async></script>
+<style>
+:root{
+  --green:#00554B; --green-dark:#003d37; --green-soft:#e0ede9;
+  --purple:#9F55AE; --purple-soft:#f2e5f5;
+  --yellow:#FBED0E; --yellow-soft:#fdf9c8;
+  --bg:#FAFAFA; --card:#fff;
+  --ink:#1c1f24; --muted:#5a6270; --muted-2:#8a94a1;
+  --line:rgba(0,0,0,.08); --line-strong:#c8ccd3;
+  --danger:#c62828; --danger-soft:#fdecea; --ok:#2e7d32;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(0,0,0,.04), 0 4px 12px rgba(0,0,0,.04);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  background:var(--bg); color:var(--ink);
+  font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+.app{max-width:640px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
+/* ---------- HEADER ---------- */
+header{
+  position:sticky;top:0;z-index:20;
+  background:var(--green);color:#fff;
+  display:flex;align-items:center;gap:10px;
+  padding:12px 14px;
+  padding-top:calc(12px + env(safe-area-inset-top));
+  box-shadow:0 1px 4px rgba(0,0,0,.15);
+}
+header .back{
+  background:transparent;border:0;color:#fff;
+  font-size:22px;line-height:1;padding:4px 6px;cursor:pointer;
+  display:none;
+}
+header .back.on{display:block}
+header h1{
+  font-size:18px;margin:0;font-weight:700;flex:1;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+header .hbtn{
+  background:rgba(255,255,255,.14);border:0;color:#fff;
+  border-radius:10px;padding:7px 10px;font-size:14px;cursor:pointer;
+}
+header .badge{
+  min-width:20px;height:20px;border-radius:10px;
+  background:var(--yellow);color:#000;font-size:11px;font-weight:700;
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:0 6px;margin-left:4px;
+}
+.accent{
+  height:6px;background:linear-gradient(90deg,var(--green),var(--purple));
+  position:relative;
+}
+.accent::after{
+  content:"";position:absolute;right:3px;top:-1px;
+  width:8px;height:8px;border-radius:50%;background:var(--yellow);
+}
+main{
+  flex:1;padding:16px;
+  padding-bottom:calc(24px + env(safe-area-inset-bottom));
+}
+.screen{display:none}
+.screen.on{display:block;animation:fade .15s ease}
+@keyframes fade{from{opacity:.4}to{opacity:1}}
+/* ---------- CARDS / LISTS ---------- */
+.card{
+  background:var(--card);border:1px solid var(--line);
+  border-radius:var(--radius);padding:14px;margin:0 0 12px;
+  box-shadow:var(--shadow);
+}
+h2.section{
+  font-size:13px;margin:18px 2px 8px;color:var(--muted);
+  font-weight:700;text-transform:uppercase;letter-spacing:.03em;
+}
+label{
+  display:block;font-size:13px;color:var(--muted);
+  margin:0 0 4px;font-weight:600;
+}
+input,select,textarea{
+  width:100%;font:inherit;padding:12px;
+  border:1px solid var(--line-strong);border-radius:10px;
+  background:#fff;color:var(--ink);
+}
+input:focus,select:focus,textarea:focus{
+  outline:2px solid var(--purple);outline-offset:-1px;
+}
+textarea{min-height:80px;resize:vertical}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;border:0;border-radius:12px;padding:14px 16px;
+  font-size:16px;font-weight:700;cursor:pointer;
+  background:var(--green);color:#fff;text-align:center;
+  font-family:inherit;
+}
+.btn:active{transform:translateY(1px)}
+.btn.secondary{background:#fff;color:var(--purple);border:1.5px solid var(--purple)}
+.btn.ghost{background:#eef0f2;color:var(--ink)}
+.btn.hero{padding:20px 16px;font-size:20px;flex-direction:column;gap:2px}
+.btn.hero small{font-weight:500;font-size:12px;opacity:.9}
+.btn.sm{width:auto;padding:9px 12px;font-size:14px;border-radius:10px}
+.btn.danger{background:var(--danger);color:#fff}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.row{display:flex;gap:8px;align-items:center}
+.row.wrap{flex-wrap:wrap}
+.grow{flex:1}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 10px;border-radius:20px;font-size:13px;font-weight:700;
+  background:#eceff1;color:#607d8b;
+}
+.chip.green{background:var(--green-soft);color:var(--green)}
+.chip.purple{background:var(--purple-soft);color:var(--purple)}
+.chip.yellow{background:var(--yellow-soft);color:#7a5f00}
+.chip.red{background:var(--danger-soft);color:var(--danger)}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.mono{font-family:ui-monospace,monospace}
+.kv{display:flex;gap:8px;padding:3px 0;font-size:15px}
+.kv b{min-width:130px;color:var(--muted);font-weight:600}
+.list-item{
+  display:flex;gap:10px;align-items:center;
+  padding:14px;border:1px solid var(--line);border-radius:12px;
+  margin:0 0 8px;background:#fff;cursor:pointer;
+}
+.list-item .grow{flex:1;min-width:0}
+.list-item .t{font-weight:700}
+.list-item .s{font-size:13px;color:var(--muted);margin-top:2px}
+.list-item .code{
+  min-width:44px;text-align:center;font-family:ui-monospace,monospace;
+  font-weight:700;color:var(--green);font-size:13px;
+  background:var(--green-soft);border-radius:6px;padding:4px 6px;
+}
+.arrow{color:var(--muted-2);font-size:22px}
+.banner{
+  border-radius:10px;padding:10px 12px;margin:0 0 12px;font-size:14px;
+}
+.banner.warn{background:#fff3e0;color:#7a4f00;border:1px solid #ffcc80}
+.banner.info{background:var(--green-soft);color:var(--green);border:1px solid #9ecfc6}
+.banner.error{background:var(--danger-soft);color:var(--danger);border:1px solid #f5a5a0}
+.empty{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty h3{color:var(--ink);margin:0 0 8px}
+.empty p{margin:0 0 14px}
+/* ---------- OBSERVATIONS ---------- */
+.obs{
+  background:#fff;border:1px solid var(--line);border-radius:12px;
+  padding:10px 12px;margin:0 0 8px;
+}
+.obs .when{font-weight:600;font-size:13px}
+.obs .who{color:var(--muted);font-size:12px}
+.obs .body{white-space:pre-wrap;margin:6px 0}
+.obs-photos{display:flex;flex-wrap:wrap;gap:6px}
+.obs-photos img{
+  width:72px;height:72px;border-radius:8px;object-fit:cover;
+  border:1px solid var(--line);background:#eee;
+}
+/* ---------- PHOTO PICKER ---------- */
+.photos{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.thumb{
+  width:88px;height:88px;border-radius:10px;object-fit:cover;
+  border:1px solid var(--line);position:relative;
+}
+.thumb .rm{
+  position:absolute;top:-6px;right:-6px;width:22px;height:22px;
+  border-radius:11px;background:var(--danger);color:#fff;border:2px solid #fff;
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;
+  cursor:pointer;
+}
+.addphoto{
+  width:88px;height:88px;border-radius:10px;
+  border:1.5px dashed var(--purple);background:#faf5fc;color:var(--purple);
+  font-size:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;
+  flex-direction:column;gap:2px;font-family:inherit;
+}
+.addphoto small{font-size:10px;font-weight:600}
+/* ---------- CAMERA / SCANNER ---------- */
+#camWrap{
+  position:fixed;inset:0;background:#000;z-index:50;
+  display:none;flex-direction:column;
+}
+#camWrap.on{display:flex}
+#camVideo{
+  flex:1;width:100%;object-fit:cover;background:#000;
+}
+.cambar{
+  display:flex;gap:12px;align-items:center;justify-content:center;
+  padding:16px;padding-bottom:calc(24px + env(safe-area-inset-bottom));
+  background:#000;
+}
+.cambar button{
+  background:#fff;color:#000;border:0;border-radius:26px;
+  padding:12px 20px;font-weight:700;font-family:inherit;font-size:15px;
+}
+.cambar button.dark{background:#333;color:#fff}
+.scan-overlay{
+  position:absolute;pointer-events:none;inset:0;
+  display:flex;align-items:center;justify-content:center;
+}
+.scan-frame{
+  width:70%;max-width:280px;aspect-ratio:1/1;
+  border:3px solid #fff;border-radius:16px;
+  box-shadow:0 0 0 9999px rgba(0,0,0,.35);
+}
+.scan-hint{
+  position:absolute;bottom:120px;left:0;right:0;text-align:center;
+  color:#fff;font-size:14px;padding:0 20px;
+  text-shadow:0 1px 2px rgba(0,0,0,.6);
+}
+/* ---------- MODAL ---------- */
+.modal-back{
+  position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;
+  display:flex;align-items:flex-end;justify-content:center;
+}
+.modal-back.center{align-items:center;padding:16px}
+.modal{
+  background:#fff;border-radius:16px 16px 0 0;
+  width:100%;max-width:640px;max-height:88vh;overflow:auto;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.modal-back.center .modal{border-radius:16px;max-width:420px}
+.modal-head{
+  padding:14px 18px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;background:#fff;z-index:1;
+}
+.modal-head h3{margin:0;font-size:17px}
+.modal-body{padding:16px 18px}
+.modal-foot{
+  padding:12px 18px;border-top:1px solid var(--line);
+  display:flex;gap:8px;justify-content:flex-end;
+  position:sticky;bottom:0;background:#fff;
+}
+/* ---------- PHOTO VIEWER ---------- */
+.photo-viewer{
+  position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:200;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  flex-direction:column;gap:12px;
+}
+.photo-viewer img{max-width:100%;max-height:80vh;object-fit:contain}
+.photo-viewer .close{
+  position:absolute;top:20px;right:20px;
+  background:rgba(255,255,255,.2);color:#fff;border:0;
+  border-radius:20px;padding:8px 14px;font-family:inherit;
+}
+/* ---------- TOAST ---------- */
+#toast{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  background:#333;color:#fff;padding:10px 16px;border-radius:8px;
+  font-size:14px;z-index:300;opacity:0;transition:opacity .2s;
+  pointer-events:none;max-width:88%;text-align:center;
+}
+#toast.on{opacity:1}
+#toast.error{background:var(--danger)}
+#toast.success{background:var(--ok)}
+/* ---------- SPINNER ---------- */
+.spinner{
+  display:inline-block;width:16px;height:16px;
+  border:2px solid rgba(255,255,255,.35);border-top-color:#fff;
+  border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;
+}
+.spinner.dark{border-color:rgba(0,0,0,.15);border-top-color:var(--green)}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* ---------- SYNC STATUS TILE ---------- */
+.status-tile{
+  display:flex;gap:10px;align-items:center;
+  padding:10px 12px;background:#fff;border:1px solid var(--line);
+  border-radius:12px;margin:0 0 12px;font-size:13px;
+}
+.status-tile .dot{width:10px;height:10px;border-radius:5px;background:var(--danger)}
+.status-tile.ok .dot{background:var(--ok)}
+.status-tile.warn .dot{background:var(--yellow)}
+.status-tile .grow{flex:1;min-width:0}
+.status-tile b{display:block;font-weight:600;font-size:13px}
+.status-tile .m{color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <button class="back" id="btnBack" aria-label="Back">←</button>
+    <h1 id="hTitle">Trial Garden</h1>
+    <button class="hbtn" id="btnMenu" aria-label="Menu">☰</button>
+  </header>
+  <div class="accent"></div>
+  <main id="main"></main>
+</div>
+<div id="camWrap">
+  <video id="camVideo" autoplay playsinline muted></video>
+  <div class="scan-overlay"><div class="scan-frame"></div></div>
+  <div class="scan-hint" id="scanHint">Point the camera at the label QR code</div>
+  <div class="cambar">
+    <button class="dark" id="camCancel">Cancel</button>
+    <button id="camManual">Type code</button>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+/* ==================================================================
+   Trial Garden Field — mobile PWA
+   Signs in with Microsoft, resolves a shared OneDrive folder,
+   reads _index.json, scans QR labels, records observations with photos
+   and uploads them as "delta" files to _inbox/ for the desktop app.
+   ================================================================== */
+
+const APP_VERSION = "2026-09-20 · r1";
+
+/* ---------- config ---------- */
+const MSAL_CLIENT_ID  = "d3f7ecc6-cdf5-4a5a-8528-263b09f6e3a4";
+const MSAL_AUTHORITY  = "https://login.microsoftonline.com/consumers";
+const GRAPH_SCOPES    = ["Files.ReadWrite","User.Read"];
+const SHARE_URL       = "https://1drv.ms/f/c/06cb787230e7d161/IgB-KkdiENHASIDTXpVNv267AWwQa9PoquGA7m2pxdX4wis";
+const GRAPH_BASE      = "https://graph.microsoft.com/v1.0";
+
+/* ---------- tiny helpers ---------- */
+const $  = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+const el = (tag, attrs={}, ...kids) => {
+  const n = document.createElement(tag);
+  for (const [k,v] of Object.entries(attrs||{})) {
+    if (v == null) continue;
+    if (k === "class") n.className = v;
+    else if (k === "style" && typeof v === "object") Object.assign(n.style, v);
+    else if (k.startsWith("on") && typeof v === "function") n.addEventListener(k.slice(2), v);
+    else if (k === "html") n.innerHTML = v;
+    else n.setAttribute(k, v);
+  }
+  for (const k of kids.flat()) {
+    if (k == null || k === false) continue;
+    n.appendChild(k.nodeType ? k : document.createTextNode(String(k)));
+  }
+  return n;
+};
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid = (n=10) => (crypto.randomUUID ? crypto.randomUUID().replace(/-/g,"") : Math.random().toString(36).slice(2)).slice(0,n);
+const nowISO = () => new Date().toISOString();
+const todayISO = () => new Date().toISOString().slice(0,10);
+const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"}) : "";
+const fmtDateTime = (iso) => iso ? new Date(iso).toLocaleString(undefined,{year:"numeric",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}) : "";
+const fmtBytes = b => { if(b==null) return ""; const u=["B","KB","MB","GB"], i=Math.min(u.length-1,Math.floor(Math.log(Math.max(b,1))/Math.log(1024))); return (b/Math.pow(1024,i)).toFixed(i?1:0)+" "+u[i]; };
+
+function toast(msg, kind="") {
+  const t = $("#toast");
+  t.textContent = msg; t.className = "on " + kind;
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=>{ t.className = ""; }, kind==="error" ? 4200 : 2400);
+}
+
+/* ---------- IndexedDB (device buffer) ---------- */
+const IDB_NAME = "tg-field-v1";
+function idbOpen() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open(IDB_NAME, 1);
+    r.onupgradeneeded = () => {
+      const db = r.result;
+      if (!db.objectStoreNames.contains("kv")) db.createObjectStore("kv");
+      if (!db.objectStoreNames.contains("outbox")) db.createObjectStore("outbox", {keyPath:"id"});
+      if (!db.objectStoreNames.contains("photos")) db.createObjectStore("photos", {keyPath:"id"});
+    };
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+async function idbGet(store, key) {
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, "readonly");
+    const req = tx.objectStore(store).get(key);
+    req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error);
+  });
+}
+async function idbPut(store, val, key) {
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, "readwrite");
+    const os = tx.objectStore(store);
+    (key !== undefined) ? os.put(val, key) : os.put(val);
+    tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error);
+  });
+}
+async function idbDelete(store, key) {
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, "readwrite");
+    tx.objectStore(store).delete(key);
+    tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error);
+  });
+}
+async function idbAll(store) {
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, "readonly");
+    const req = tx.objectStore(store).getAll();
+    req.onsuccess = () => res(req.result || []); req.onerror = () => rej(req.error);
+  });
+}
+
+/* ---------- state ---------- */
+const state = {
+  msal: null, account: null,
+  workspaceRef: null,    // {driveId, itemId} of the shared Trial Garden folder
+  data: null,            // parsed _index.json
+  dataFetchedAt: null,
+  online: navigator.onLine,
+  pending: 0,            // outbox count
+  route: {view:"home"},
+  history: []
+};
+
+/* ---------- MSAL ---------- */
+let msalReadyPromise = null;
+async function initMsal() {
+  if (msalReadyPromise) return msalReadyPromise;
+  msalReadyPromise = (async () => {
+    // wait until msal-browser is loaded (async script)
+    let waits = 0;
+    while (typeof msal === "undefined" && waits < 60) { await new Promise(r=>setTimeout(r,100)); waits++; }
+    if (typeof msal === "undefined") throw new Error("MSAL library did not load — are you online?");
+    state.msal = new msal.PublicClientApplication({
+      auth: {
+        clientId: MSAL_CLIENT_ID,
+        authority: MSAL_AUTHORITY,
+        redirectUri: new URL("./redirect.html", location.href).href
+      },
+      cache: { cacheLocation: "localStorage", storeAuthStateInCookie: false }
+    });
+    await state.msal.initialize();
+    const res = await state.msal.handleRedirectPromise();
+    if (res && res.account) state.msal.setActiveAccount(res.account);
+    else {
+      const accs = state.msal.getAllAccounts();
+      if (accs.length && !state.msal.getActiveAccount()) state.msal.setActiveAccount(accs[0]);
+    }
+    state.account = state.msal.getActiveAccount();
+    return state.msal;
+  })();
+  return msalReadyPromise;
+}
+async function signIn() {
+  await initMsal();
+  try {
+    await state.msal.loginRedirect({ scopes: GRAPH_SCOPES, prompt: "select_account" });
+  } catch (e) {
+    toast("Sign-in failed: " + (e.message || e), "error");
+  }
+}
+async function signOut() {
+  if (!state.msal) return;
+  try { state.msal.setActiveAccount(null); } catch {}
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k && (k.indexOf(MSAL_CLIENT_ID) >= 0 || k.indexOf("msal.") === 0)) localStorage.removeItem(k);
+    }
+  } catch {}
+  state.account = null;
+  msalReadyPromise = null;
+  await idbDelete("kv", "workspaceRef");
+  state.workspaceRef = null;
+  toast("Signed out", "success");
+  navigate({view:"home"});
+}
+async function getToken() {
+  await initMsal();
+  const acc = state.msal.getActiveAccount();
+  if (!acc) throw new Error("Not signed in");
+  try {
+    const r = await state.msal.acquireTokenSilent({scopes:GRAPH_SCOPES, account:acc});
+    return r.accessToken;
+  } catch (e) {
+    // fallback to redirect
+    await state.msal.acquireTokenRedirect({scopes:GRAPH_SCOPES, account:acc});
+    throw e;
+  }
+}
+
+/* ---------- Graph helpers ---------- */
+async function graph(path, opts={}) {
+  const token = await getToken();
+  const url = path.startsWith("http") ? path : GRAPH_BASE + path;
+  const headers = Object.assign({ "Authorization": "Bearer " + token }, opts.headers || {});
+  if (opts.json != null) {
+    headers["Content-Type"] = "application/json";
+    opts.body = JSON.stringify(opts.json);
+    delete opts.json;
+  }
+  const r = await fetch(url, Object.assign({}, opts, {headers}));
+  if (!r.ok) {
+    let msg;
+    try { const j = await r.json(); msg = j?.error?.message; } catch {}
+    throw new Error(`Graph ${r.status} ${msg || r.statusText}`);
+  }
+  if (r.status === 204) return null;
+  const ct = r.headers.get("content-type") || "";
+  return ct.includes("json") ? await r.json() : await r.blob();
+}
+
+function encodeShareUrl(url) {
+  const b64 = btoa(url).replace(/=+$/,"").replace(/\//g,"_").replace(/\+/g,"-");
+  return "u!" + b64;
+}
+async function resolveWorkspace() {
+  if (state.workspaceRef) return state.workspaceRef;
+  const cached = await idbGet("kv", "workspaceRef");
+  if (cached) { state.workspaceRef = cached; return cached; }
+  const item = await graph(`/shares/${encodeShareUrl(SHARE_URL)}/driveItem`, {
+    headers: { Prefer: "redeemSharingLinkIfNecessary" }
+  });
+  const driveId = item.parentReference?.driveId ?? item.remoteItem?.parentReference?.driveId;
+  const itemId  = item.remoteItem?.id || item.id;
+  if (!driveId || !itemId) throw new Error("Could not resolve shared Trial Garden folder — check the share link and access.");
+  const ref = {driveId, itemId, name: item.name || "Trial Garden"};
+  state.workspaceRef = ref;
+  await idbPut("kv", ref, "workspaceRef");
+  return ref;
+}
+function itemUrl(sub) {
+  const {driveId, itemId} = state.workspaceRef;
+  return `/drives/${driveId}/items/${itemId}${sub}`;
+}
+async function loadIndex({fresh=false} = {}) {
+  if (!fresh && state.data) return state.data;
+  await resolveWorkspace();
+  try {
+    const blob = await graph(itemUrl(`:/_index.json:/content`));
+    const txt = await (blob instanceof Blob ? blob.text() : Promise.resolve(blob));
+    state.data = JSON.parse(typeof txt === "string" ? txt : JSON.stringify(txt));
+    state.dataFetchedAt = nowISO();
+    await idbPut("kv", {data:state.data, at:state.dataFetchedAt}, "cachedIndex");
+  } catch (e) {
+    // fall back to cached copy
+    const cached = await idbGet("kv", "cachedIndex");
+    if (cached) {
+      state.data = cached.data;
+      state.dataFetchedAt = cached.at;
+      toast("Offline — using cached data from " + fmtDateTime(cached.at), "");
+    } else {
+      throw e;
+    }
+  }
+  return state.data;
+}
+
+/* ---------- data lookups ---------- */
+function trialById(id)     { return state.data.trials.find(t=>t.id===id); }
+function trialByCode(code) { return state.data.trials.find(t => (t.code||"").toLowerCase() === (code||"").toLowerCase()); }
+function treatmentByCode(trial, code) { return trial.treatments.find(t=> (t.code||"").toLowerCase() === (code||"").toLowerCase()); }
+function parseLabel(payload) {
+  // payload example: TR-2026-0002-T07-R03
+  const m = String(payload||"").trim().match(/^(.+?)-(T\d+)-R(\d+)$/i);
+  if (!m) return null;
+  return { trialCode: m[1], treatmentCode: m[2].toUpperCase(), replicate: parseInt(m[3],10) };
+}
+function resolveLabel(payload) {
+  const p = parseLabel(payload);
+  if (!p) return {error:"Not a Trial Garden label (expected e.g. TR-2026-0002-T07-R03)"};
+  if (!state.data) return {error:"Trial data not loaded yet"};
+  const trial = trialByCode(p.trialCode);
+  if (!trial) return {error:`Trial "${p.trialCode}" not found in this workspace`, parsed:p};
+  const treatment = treatmentByCode(trial, p.treatmentCode);
+  if (!treatment) return {error:`Treatment "${p.treatmentCode}" not found in trial ${trial.code}`, parsed:p};
+  const reps = treatment.replicatesOverride ?? trial.defaultReplicates ?? 3;
+  if (p.replicate < 1 || p.replicate > reps) return {error:`Replicate ${p.replicate} out of range (1–${reps})`, parsed:p};
+  return {trial, treatment, replicate:p.replicate};
+}
+
+/* ---------- OUTBOX ---------- */
+async function refreshPendingCount() {
+  const items = await idbAll("outbox");
+  state.pending = items.filter(x => x.status !== "synced").length;
+  const b = $("#hBadge"); if (b) b.textContent = state.pending || "";
+}
+async function enqueueObservation(observation, photoBlobs) {
+  const id = "delta_" + uid(12);
+  const now = nowISO();
+  // photos → idb
+  const photoRecs = [];
+  for (const [i, blob] of photoBlobs.entries()) {
+    const pid = id + "-p" + String(i+1).padStart(2,"0");
+    const name = pid + "-" + (blob.name || `photo.jpg`).replace(/[^A-Za-z0-9._-]+/g,"_");
+    await idbPut("photos", {id:pid, blob, name, mime: blob.type || "image/jpeg"});
+    photoRecs.push({id:pid, name, size:blob.size, mime: blob.type || "image/jpeg"});
+  }
+  const record = {
+    id, createdAt: now, status: "pending",
+    observation, // {scope, trialId, targetId, replicate, at, author, text}
+    photos: photoRecs,
+    tries: 0
+  };
+  await idbPut("outbox", record);
+  await refreshPendingCount();
+  attemptSync().catch(()=>{});
+  return record;
+}
+async function attemptSync() {
+  if (!navigator.onLine) return;
+  if (!state.msal || !state.msal.getActiveAccount()) return;
+  const items = await idbAll("outbox");
+  const pending = items.filter(x => x.status !== "synced");
+  if (!pending.length) return;
+  await resolveWorkspace();
+  for (const rec of pending) {
+    try {
+      await syncOne(rec);
+    } catch (e) {
+      console.warn("sync failed for", rec.id, e);
+      rec.tries = (rec.tries||0) + 1;
+      rec.lastError = String(e.message || e);
+      await idbPut("outbox", rec);
+    }
+  }
+  await refreshPendingCount();
+  updateStatusTile();
+}
+async function syncOne(rec) {
+  // Upload photos into _inbox/attachments/
+  const uploaded = [];
+  for (const p of rec.photos || []) {
+    const stored = await idbGet("photos", p.id);
+    if (!stored) continue;
+    await uploadFile(`:/_inbox/attachments/${p.name}:/content`, stored.blob, stored.mime);
+    uploaded.push({id:p.id, name:p.name, size: stored.blob.size, mime: p.mime});
+  }
+  // Build delta json
+  const trial = trialById(rec.observation.trialId);
+  const delta = {
+    schema: 1,
+    kind: "field-delta",
+    id: rec.id,
+    createdAt: rec.createdAt,
+    device: state.deviceId || (state.deviceId = getDeviceId()),
+    account: state.msal.getActiveAccount()?.username || null,
+    trialCode: trial?.code,
+    trialId: rec.observation.trialId,
+    observation: rec.observation,
+    photos: uploaded.map(u => ({id:u.id, filename:u.name, size:u.size, mime:u.mime}))
+  };
+  const blob = new Blob([JSON.stringify(delta, null, 2)], {type:"application/json"});
+  await uploadFile(`:/_inbox/${rec.id}.json:/content`, blob, "application/json");
+  // done — mark synced, delete photos from idb
+  rec.status = "synced";
+  rec.syncedAt = nowISO();
+  await idbPut("outbox", rec);
+  for (const p of rec.photos || []) { try { await idbDelete("photos", p.id); } catch {} }
+}
+async function uploadFile(itemSub, blob, mime) {
+  const token = await getToken();
+  const url = GRAPH_BASE + itemUrl(itemSub);
+  const r = await fetch(url, {
+    method: "PUT",
+    headers: {
+      "Authorization": "Bearer " + token,
+      "Content-Type": mime || "application/octet-stream"
+    },
+    body: blob
+  });
+  if (!r.ok) {
+    let msg;
+    try { const j = await r.json(); msg = j?.error?.message; } catch {}
+    throw new Error(`Upload ${r.status} ${msg || r.statusText}`);
+  }
+  return r.json();
+}
+function getDeviceId() {
+  let id = localStorage.getItem("tg-device-id");
+  if (!id) { id = "dev_" + uid(10); localStorage.setItem("tg-device-id", id); }
+  return id;
+}
+
+/* =====================================================================
+   ROUTING / SCREENS
+   ===================================================================== */
+function navigate(route, {push=true} = {}) {
+  if (push) state.history.push(state.route);
+  state.route = route;
+  render();
+}
+function goBack() {
+  if (!state.history.length) { navigate({view:"home"}, {push:false}); return; }
+  const prev = state.history.pop();
+  state.route = prev;
+  render();
+}
+function render() {
+  // header title
+  const titles = {
+    home: "Trial Garden",
+    trials: "Trials",
+    trial: "Trial",
+    treatment: "Treatment",
+    replicate: "Replicate",
+    outbox: "Outbox",
+    settings: "Settings",
+    signIn: "Sign in"
+  };
+  $("#hTitle").textContent = titles[state.route.view] || "Trial Garden";
+  $("#btnBack").classList.toggle("on", state.history.length > 0);
+
+  const main = $("#main");
+  main.innerHTML = "";
+  if (!state.account) { main.appendChild(renderSignIn()); return; }
+  switch (state.route.view) {
+    case "home":      main.appendChild(renderHome()); break;
+    case "trials":    main.appendChild(renderTrials()); break;
+    case "trial":     main.appendChild(renderTrial()); break;
+    case "treatment": main.appendChild(renderTreatment()); break;
+    case "replicate": main.appendChild(renderReplicate()); break;
+    case "outbox":    main.appendChild(renderOutbox()); break;
+    case "settings":  main.appendChild(renderSettings()); break;
+    default:          main.appendChild(renderHome());
+  }
+}
+
+/* ---------- SIGN-IN screen ---------- */
+function renderSignIn() {
+  const wrap = el("div", {class:"empty"});
+  wrap.appendChild(el("h3", {}, "Sign in to Trial Garden"));
+  wrap.appendChild(el("p", {}, "Use the Microsoft account that has access to the shared Trial Garden folder on OneDrive."));
+  wrap.appendChild(el("button", {class:"btn", onclick:signIn}, "Sign in with Microsoft"));
+  wrap.appendChild(el("p", {class:"small muted", style:{marginTop:"18px"}}, "Version " + APP_VERSION));
+  return wrap;
+}
+
+/* ---------- HOME ---------- */
+function renderHome() {
+  const wrap = el("div");
+  wrap.appendChild(renderStatusTile());
+  wrap.appendChild(el("button", {class:"btn hero", style:{marginBottom:"12px"}, onclick:startScan},
+    "📷 Scan label",
+    el("small", {}, "Point camera at a QR code")
+  ));
+  wrap.appendChild(el("div", {class:"row", style:{gap:"10px", marginBottom:"12px"}},
+    el("button", {class:"btn secondary", style:{flex:"1"}, onclick:()=>navigate({view:"trials"})}, "Browse trials"),
+    el("button", {class:"btn secondary", style:{flex:"1"}, onclick:manualLabel}, "Type code")
+  ));
+  const pendingSummary = state.pending
+    ? el("div", {class:"banner warn", style:{cursor:"pointer"}, onclick:()=>navigate({view:"outbox"})},
+        state.pending + " observation(s) waiting to sync. Tap to view outbox.")
+    : null;
+  if (pendingSummary) wrap.appendChild(pendingSummary);
+  wrap.appendChild(el("h2", {class:"section"}, "Recent"));
+  const recentPanel = el("div", {id:"recentList"});
+  wrap.appendChild(recentPanel);
+  renderRecent(recentPanel);
+  return wrap;
+}
+function renderStatusTile() {
+  const tile = el("div", {class:"status-tile"});
+  updateStatusTileEl(tile);
+  return tile;
+}
+function updateStatusTileEl(tile) {
+  const online = navigator.onLine;
+  const signedIn = !!state.account;
+  let kind = "ok", head = "All good", sub = "";
+  if (!signedIn) { kind = ""; head = "Not signed in"; sub = "Tap Settings to sign in"; }
+  else if (!online) { kind = "warn"; head = "Offline"; sub = state.pending ? (state.pending + " pending — will sync when online") : "Field observations will be queued"; }
+  else if (state.pending) { kind = "warn"; head = "Syncing…"; sub = state.pending + " observation(s) in outbox"; }
+  else if (state.dataFetchedAt) { head = "Ready"; sub = "Trial data as of " + fmtDateTime(state.dataFetchedAt); }
+  else { head = "Signed in"; sub = "Loading trial data…"; }
+  tile.className = "status-tile " + kind;
+  tile.innerHTML = "";
+  tile.appendChild(el("div", {class:"dot"}));
+  tile.appendChild(el("div", {class:"grow"},
+    el("b", {}, head),
+    el("div", {class:"m"}, sub)
+  ));
+  tile.appendChild(el("button", {class:"btn sm ghost", onclick:async()=>{ tile.querySelector(".btn").disabled = true; try { await loadIndex({fresh:true}); await attemptSync(); toast("Refreshed","success"); render(); } catch(e){ toast("Refresh failed: "+e.message,"error"); } }}, "↻"));
+}
+function updateStatusTile() {
+  const t = $(".status-tile"); if (t) updateStatusTileEl(t);
+}
+
+async function renderRecent(container) {
+  container.innerHTML = "";
+  const items = await idbAll("outbox");
+  const recent = items.sort((a,b) => (b.createdAt||"").localeCompare(a.createdAt||"")).slice(0,6);
+  if (!recent.length) {
+    container.appendChild(el("div", {class:"muted small", style:{padding:"12px 4px"}}, "No recent observations from this device."));
+    return;
+  }
+  for (const r of recent) {
+    const trial = state.data ? trialById(r.observation.trialId) : null;
+    const scopeLabel = r.observation.scope === "trial" ? "Trial"
+      : r.observation.scope === "treatment" ? "Treatment"
+      : "R" + String(r.observation.replicate).padStart(2,"0");
+    container.appendChild(el("div", {class:"list-item", onclick:()=>viewOutboxItem(r)},
+      el("div", {class:"code"}, (trial?.code || "?").slice(-6)),
+      el("div", {class:"grow"},
+        el("div", {class:"t"}, (r.observation.text||"(no text)").slice(0,60)),
+        el("div", {class:"s"}, scopeLabel, " · ", fmtDateTime(r.createdAt),
+          r.status==="synced" ? " · ✓ synced" : (r.status==="pending" ? " · ⏳ pending" : (" · ⚠ " + (r.lastError||"error"))))
+      ),
+      el("div", {class:"arrow"}, "›")
+    ));
+  }
+}
+
+/* ---------- TRIALS LIST ---------- */
+function renderTrials() {
+  const wrap = el("div");
+  if (!state.data) {
+    wrap.appendChild(el("div", {class:"empty"}, el("div",{class:"spinner dark"}), el("p",{}, "Loading trials…")));
+    loadIndex().then(()=>render()).catch(e => toast("Load failed: "+e.message,"error"));
+    return wrap;
+  }
+  if (!state.data.trials.length) {
+    wrap.appendChild(el("div", {class:"empty"}, el("h3", {}, "No trials yet"), el("p", {}, "Create a trial from the desktop app.")));
+    return wrap;
+  }
+  for (const t of state.data.trials) {
+    const open = t.actions?.filter(a=>a.status==="open").length || 0;
+    wrap.appendChild(el("div", {class:"list-item", onclick:()=>navigate({view:"trial", trialId:t.id})},
+      el("div", {class:"code"}, t.code || ""),
+      el("div", {class:"grow"},
+        el("div", {class:"t"}, t.name || "(unnamed)"),
+        el("div", {class:"s"}, (t.status||"planned").replace("_"," "),
+          " · ", (t.treatments?.length || 0), " treatments")
+      ),
+      el("div", {class:"arrow"}, "›")
+    ));
+  }
+  return wrap;
+}
+
+/* ---------- TRIAL DETAIL ---------- */
+function renderTrial() {
+  const wrap = el("div");
+  if (!state.data) { loadIndex().then(()=>render()); return el("div", {class:"empty"}, el("div",{class:"spinner dark"})); }
+  const t = trialById(state.route.trialId);
+  if (!t) { toast("Trial not found","error"); return renderTrials(); }
+
+  wrap.appendChild(el("div", {class:"card"},
+    el("div", {class:"kv"}, el("b", {}, "Code"), el("span", {class:"mono"}, t.code||"")),
+    el("div", {class:"kv"}, el("b", {}, "Name"), el("span", {}, t.name||"")),
+    el("div", {class:"kv"}, el("b", {}, "Status"), el("span", {}, (t.status||"planned").replace("_"," "))),
+    el("div", {class:"kv"}, el("b", {}, "Start"), el("span", {}, fmtDate(t.startDate) || "—")),
+    el("div", {class:"kv"}, el("b", {}, "Treatments"), el("span", {}, String((t.treatments||[]).length)))
+  ));
+  wrap.appendChild(el("button", {class:"btn", onclick:()=>openAddObservation({scope:"trial", trialId:t.id, targetId:null, replicate:null})},
+    "+ Add trial-level observation"));
+
+  wrap.appendChild(el("h2", {class:"section"}, "Treatments"));
+  const active = (t.treatments||[]).filter(x => x.active !== false);
+  for (const tr of active) {
+    wrap.appendChild(el("div", {class:"list-item", onclick:()=>navigate({view:"treatment", trialId:t.id, treatmentId:tr.id})},
+      el("div", {class:"code"}, tr.code),
+      el("div", {class:"grow"},
+        el("div", {class:"t"}, tr.name || "(unnamed)"),
+        el("div", {class:"s"}, (tr.replicatesOverride ?? t.defaultReplicates ?? 3) + " replicates" + (tr.isControl ? " · ★ control" : ""))
+      ),
+      el("div", {class:"arrow"}, "›")
+    ));
+  }
+  return wrap;
+}
+/* ---------- TREATMENT DETAIL ---------- */
+function renderTreatment() {
+  const wrap = el("div");
+  if (!state.data) { loadIndex().then(()=>render()); return el("div", {class:"empty"}, el("div",{class:"spinner dark"})); }
+  const t = trialById(state.route.trialId);
+  const tr = t && t.treatments.find(x=>x.id===state.route.treatmentId);
+  if (!tr) { toast("Treatment not found","error"); return renderTrials(); }
+
+  wrap.appendChild(el("div", {class:"card"},
+    el("div", {class:"kv"}, el("b", {}, "Trial"), el("span", {}, t.code + " — " + (t.name||""))),
+    el("div", {class:"kv"}, el("b", {}, "Treatment"), el("span", {class:"mono"}, tr.code)),
+    el("div", {class:"kv"}, el("b", {}, "Name"), el("span", {}, tr.name || "")),
+    el("div", {class:"kv"}, el("b", {}, "Replicates"), el("span", {}, String(tr.replicatesOverride ?? t.defaultReplicates ?? 3)))
+  ));
+
+  wrap.appendChild(el("button", {class:"btn", onclick:()=>openAddObservation({scope:"treatment", trialId:t.id, targetId:tr.id, replicate:null})},
+    "+ Add treatment-level observation"));
+
+  wrap.appendChild(el("h2", {class:"section"}, "Replicates"));
+  const reps = tr.replicatesOverride ?? t.defaultReplicates ?? 3;
+  for (let i=1; i<=reps; i++) {
+    const code = "R" + String(i).padStart(2,"0");
+    wrap.appendChild(el("div", {class:"list-item", onclick:()=>navigate({view:"replicate", trialId:t.id, treatmentId:tr.id, replicate:i})},
+      el("div", {class:"code"}, code),
+      el("div", {class:"grow"},
+        el("div", {class:"t"}, "Replicate " + i),
+        el("div", {class:"s"}, "QR: " + t.code + "-" + tr.code + "-" + code)
+      ),
+      el("div", {class:"arrow"}, "›")
+    ));
+  }
+  return wrap;
+}
+
+/* ---------- REPLICATE DETAIL ---------- */
+function renderReplicate() {
+  const wrap = el("div");
+  if (!state.data) { loadIndex().then(()=>render()); return el("div", {class:"empty"}, el("div",{class:"spinner dark"})); }
+  const t = trialById(state.route.trialId);
+  const tr = t && t.treatments.find(x=>x.id===state.route.treatmentId);
+  const rep = state.route.replicate;
+  if (!tr) { toast("Treatment not found","error"); return renderTrials(); }
+  const code = "R" + String(rep).padStart(2,"0");
+  wrap.appendChild(el("div", {class:"card"},
+    el("div", {class:"kv"}, el("b", {}, "Trial"), el("span", {}, t.code)),
+    el("div", {class:"kv"}, el("b", {}, "Treatment"), el("span", {}, tr.code + " — " + (tr.name||""))),
+    el("div", {class:"kv"}, el("b", {}, "Replicate"), el("span", {class:"mono"}, code)),
+    el("div", {class:"kv"}, el("b", {}, "QR payload"), el("span", {class:"mono small"}, t.code+"-"+tr.code+"-"+code))
+  ));
+  wrap.appendChild(el("button", {class:"btn hero", onclick:()=>openAddObservation({scope:"replicate", trialId:t.id, targetId:tr.id, replicate:rep})},
+    "+ Add observation here",
+    el("small", {}, "Text · photos · timestamp")));
+  // recent observations from this device for this scope
+  wrap.appendChild(el("h2", {class:"section"}, "Recent from this device"));
+  const list = el("div"); wrap.appendChild(list);
+  idbAll("outbox").then(items => {
+    const filtered = items
+      .filter(x => x.observation.scope === "replicate" && x.observation.targetId === tr.id && x.observation.replicate === rep)
+      .sort((a,b) => (b.createdAt||"").localeCompare(a.createdAt||""));
+    if (!filtered.length) list.appendChild(el("div", {class:"muted small"}, "No observations added from this device yet."));
+    for (const r of filtered) list.appendChild(renderOutboxObs(r));
+  });
+  return wrap;
+}
+function renderOutboxObs(r) {
+  const status = r.status === "synced" ? "✓ synced" : (r.status === "pending" ? "⏳ pending" : "⚠ " + (r.lastError||"error"));
+  const wrap = el("div", {class:"obs"});
+  wrap.appendChild(el("div", {class:"when"}, fmtDateTime(r.observation.at), el("span", {class:"who"}, " · " + (r.observation.author||"") + " · " + status)));
+  wrap.appendChild(el("div", {class:"body"}, r.observation.text || ""));
+  return wrap;
+}
+
+/* ---------- ADD OBSERVATION (bottom sheet) ---------- */
+function openAddObservation(ctx) {
+  const back = el("div", {class:"modal-back", onclick:(e)=>{ if (e.target===back) close(); }});
+  const modal = el("div", {class:"modal"});
+  const trial = trialById(ctx.trialId);
+  const scopeLabel = ctx.scope === "trial" ? "Trial-level"
+    : ctx.scope === "treatment" ? ("Treatment " + (trial.treatments.find(t=>t.id===ctx.targetId)?.code||""))
+    : ("Replicate R" + String(ctx.replicate).padStart(2,"0"));
+
+  modal.appendChild(el("div", {class:"modal-head"},
+    el("h3", {}, "New observation"),
+    el("button", {class:"btn sm ghost", onclick:close}, "×")));
+  const body = el("div", {class:"modal-body"});
+  body.appendChild(el("div", {class:"chip green", style:{marginBottom:"10px"}}, scopeLabel + " · " + (trial?.code||"")));
+  const ta = el("textarea", {placeholder:"What did you see? (free text)"});
+  body.appendChild(ta);
+  body.appendChild(el("div", {style:{marginTop:"8px"}},
+    el("label", {}, "Date"),
+    (() => { const inp = el("input", {type:"date", value: todayISO()}); return inp; })()
+  ));
+  const dateInput = body.querySelector('input[type="date"]');
+  body.appendChild(el("div", {style:{marginTop:"8px"}},
+    el("label", {}, "Author"),
+    (() => { const cached = localStorage.getItem("tg-author") || (state.msal?.getActiveAccount()?.name || ""); return el("input", {type:"text", value:cached, placeholder:"Your name"}); })()
+  ));
+  const authorInput = body.querySelectorAll('input[type="text"]')[body.querySelectorAll('input[type="text"]').length-1];
+
+  const photos = [];
+  const photoGrid = el("div", {class:"photos"});
+  function renderPhotos() {
+    photoGrid.innerHTML = "";
+    photos.forEach((p, i) => {
+      const src = URL.createObjectURL(p);
+      const wrap = el("div", {style:{position:"relative"}},
+        el("img", {class:"thumb", src, alt:p.name||"photo"}),
+        el("div", {class:"rm", onclick:()=>{ photos.splice(i,1); renderPhotos(); }}, "×")
+      );
+      photoGrid.appendChild(wrap);
+    });
+    const addCam = el("label", {class:"addphoto", title:"Take photo"},
+      "📷", el("small", {}, "Camera"),
+      el("input", {type:"file", accept:"image/*", capture:"environment", style:{display:"none"},
+        onchange:(e)=>{ for (const f of e.target.files||[]) photos.push(f); renderPhotos(); e.target.value=""; }}));
+    const addPick = el("label", {class:"addphoto", title:"From gallery"},
+      "🖼", el("small", {}, "Gallery"),
+      el("input", {type:"file", accept:"image/*", multiple:"multiple", style:{display:"none"},
+        onchange:(e)=>{ for (const f of e.target.files||[]) photos.push(f); renderPhotos(); e.target.value=""; }}));
+    photoGrid.appendChild(addCam);
+    photoGrid.appendChild(addPick);
+  }
+  body.appendChild(el("label", {style:{marginTop:"12px"}}, "Photos"));
+  body.appendChild(photoGrid);
+  renderPhotos();
+  modal.appendChild(body);
+
+  const foot = el("div", {class:"modal-foot"});
+  foot.appendChild(el("button", {class:"btn sm ghost", onclick:close}, "Cancel"));
+  const saveBtn = el("button", {class:"btn sm", style:{background:"var(--green)", color:"#fff"},
+    onclick:async()=>{
+      const text = ta.value.trim();
+      if (!text && !photos.length) { toast("Type something or attach a photo", "error"); return; }
+      saveBtn.disabled = true;
+      const author = authorInput.value.trim();
+      if (author) localStorage.setItem("tg-author", author);
+      const [y,m,d] = (dateInput.value || todayISO()).split("-").map(Number);
+      const now = new Date();
+      const at = new Date(y, m-1, d, now.getHours(), now.getMinutes(), now.getSeconds()).toISOString();
+      const observation = {
+        scope: ctx.scope, trialId: ctx.trialId, targetId: ctx.targetId, replicate: ctx.replicate ?? null,
+        at, author: author || null, text
+      };
+      try {
+        await enqueueObservation(observation, photos);
+        toast("Saved" + (navigator.onLine ? " · syncing…" : " · will sync when online"), "success");
+        close(); render();
+      } catch (e) {
+        toast("Save failed: " + e.message, "error");
+        saveBtn.disabled = false;
+      }
+    }}, "Save observation");
+  foot.appendChild(saveBtn);
+  modal.appendChild(foot);
+  back.appendChild(modal);
+  document.body.appendChild(back);
+  function close() { try { document.body.removeChild(back); } catch {} }
+}
+
+/* ---------- OUTBOX ---------- */
+async function renderOutboxAsync(wrap) {
+  const items = (await idbAll("outbox")).sort((a,b) => (b.createdAt||"").localeCompare(a.createdAt||""));
+  if (!items.length) {
+    wrap.appendChild(el("div", {class:"empty"}, el("h3", {}, "Outbox is empty"), el("p", {}, "New observations you record will appear here.")));
+    return;
+  }
+  const pending = items.filter(x => x.status !== "synced");
+  wrap.appendChild(el("div", {class:"row", style:{marginBottom:"10px"}},
+    el("div", {class:"grow small"},
+      el("b", {}, pending.length + " pending"), " · ", (items.length - pending.length) + " synced"
+    ),
+    el("button", {class:"btn sm", style:{width:"auto"}, onclick:async()=>{ await attemptSync(); renderApp(); }}, "Sync now")
+  ));
+  for (const r of items) {
+    const trial = trialById(r.observation.trialId);
+    const scope = r.observation.scope === "trial" ? "Trial"
+      : r.observation.scope === "treatment" ? "Treatment " + (trial?.treatments.find(t=>t.id===r.observation.targetId)?.code||"")
+      : "R" + String(r.observation.replicate).padStart(2,"0");
+    const statusChip = r.status === "synced"
+      ? el("span", {class:"chip green"}, "✓ synced")
+      : (r.status === "pending" ? el("span", {class:"chip yellow"}, "⏳ pending") : el("span", {class:"chip red"}, "⚠ error"));
+    wrap.appendChild(el("div", {class:"obs"},
+      el("div", {class:"when"}, fmtDateTime(r.createdAt),
+        el("span", {class:"who"}, " · " + (trial?.code||"?") + " · " + scope + " · " + (r.observation.author||"")),
+        el("span", {style:{marginLeft:"8px"}}, statusChip)),
+      el("div", {class:"body"}, r.observation.text || ""),
+      r.photos?.length ? el("div", {class:"small muted"}, r.photos.length + " photo(s)") : null,
+      r.lastError ? el("div", {class:"small", style:{color:"var(--danger)"}}, r.lastError) : null,
+      r.status === "synced"
+        ? el("div", {class:"row", style:{justifyContent:"flex-end", marginTop:"6px"}},
+            el("button", {class:"btn sm ghost", onclick:async()=>{ await idbDelete("outbox", r.id); render(); }}, "Dismiss"))
+        : el("div", {class:"row", style:{justifyContent:"flex-end", marginTop:"6px"}},
+            el("button", {class:"btn sm ghost", onclick:async()=>{ try { await syncOne(r); toast("Synced","success"); } catch(e){ toast("Retry failed: "+e.message,"error"); } render(); }}, "Retry"),
+            el("button", {class:"btn sm ghost", style:{color:"var(--danger)"}, onclick:async()=>{ await idbDelete("outbox", r.id); render(); }}, "Discard"))
+    ));
+  }
+}
+function renderOutbox() {
+  const wrap = el("div");
+  renderOutboxAsync(wrap);
+  return wrap;
+}
+async function viewOutboxItem(r) {
+  navigate({view:"outbox"});
+}
+function renderApp() { render(); }
+
+/* ---------- SETTINGS ---------- */
+function renderSettings() {
+  const wrap = el("div");
+  const acc = state.msal?.getActiveAccount();
+  wrap.appendChild(el("div", {class:"card"},
+    el("h2", {class:"section", style:{margin:"0 0 6px"}}, "Account"),
+    el("div", {}, acc ? (acc.name || acc.username || "signed in") : "Not signed in"),
+    acc ? el("div", {class:"muted small"}, acc.username || "") : null,
+    el("div", {style:{marginTop:"10px"}},
+      acc
+        ? el("button", {class:"btn ghost", onclick:signOut}, "Sign out")
+        : el("button", {class:"btn", onclick:signIn}, "Sign in with Microsoft"))
+  ));
+  wrap.appendChild(el("div", {class:"card"},
+    el("h2", {class:"section", style:{margin:"0 0 6px"}}, "Workspace"),
+    el("div", {}, state.workspaceRef ? ("Shared folder: " + esc(state.workspaceRef.name)) : "Not connected"),
+    el("div", {class:"muted small"}, state.dataFetchedAt ? ("Data last refreshed " + fmtDateTime(state.dataFetchedAt)) : ""),
+    el("div", {style:{marginTop:"10px"}},
+      el("button", {class:"btn sm", style:{width:"auto"}, onclick:async()=>{
+        try { await loadIndex({fresh:true}); toast("Refreshed","success"); render(); }
+        catch(e){ toast("Refresh failed: "+e.message,"error"); }
+      }}, "Refresh trial data"))
+  ));
+  wrap.appendChild(el("div", {class:"card"},
+    el("h2", {class:"section", style:{margin:"0 0 6px"}}, "About"),
+    el("div", {class:"muted small"},
+      "Trial Garden Field · ", APP_VERSION, el("br"),
+      "Data source: the shared Trial Garden folder on OneDrive.")
+  ));
+  return wrap;
+}
+
+/* =====================================================================
+   CAMERA / QR SCANNER
+   ===================================================================== */
+let camStream = null, scanTimer = null, barcodeDetector = null;
+async function startScan() {
+  if (!("mediaDevices" in navigator && navigator.mediaDevices.getUserMedia)) {
+    toast("Camera not available on this device — using code entry instead");
+    return manualLabel();
+  }
+  try { camStream = await navigator.mediaDevices.getUserMedia({video: {facingMode: {ideal:"environment"}}}); }
+  catch (e) { toast("Camera denied — try Type code", "error"); return manualLabel(); }
+  const v = $("#camVideo"); v.srcObject = camStream;
+  $("#camWrap").classList.add("on");
+  $("#scanHint").textContent = "Point the camera at the label QR code";
+  // barcode detection
+  if ("BarcodeDetector" in window) {
+    try { barcodeDetector = new BarcodeDetector({formats:["qr_code"]}); }
+    catch { barcodeDetector = null; }
+  }
+  clearInterval(scanTimer);
+  scanTimer = setInterval(scanTick, 500);
+}
+async function scanTick() {
+  const v = $("#camVideo");
+  if (!v || v.readyState < 2) return;
+  if (!barcodeDetector) return; // fall back to manual only
+  try {
+    const results = await barcodeDetector.detect(v);
+    if (results && results.length) {
+      const raw = results[0].rawValue || results[0].rawValue;
+      if (raw) onLabelScanned(String(raw));
+    }
+  } catch (e) { /* ignore */ }
+}
+function stopScan() {
+  clearInterval(scanTimer); scanTimer = null;
+  $("#camWrap").classList.remove("on");
+  const v = $("#camVideo"); if (v) v.srcObject = null;
+  if (camStream) { for (const t of camStream.getTracks()) t.stop(); camStream = null; }
+}
+function onLabelScanned(payload) {
+  stopScan();
+  goToLabel(payload);
+}
+function goToLabel(payload) {
+  const res = resolveLabel(payload);
+  if (res.error) {
+    toast(res.error, "error");
+    if (res.parsed) {
+      // show a small info modal so user knows they scanned something
+      showLabelMismatch(payload, res);
+    }
+    return;
+  }
+  navigate({view:"replicate", trialId:res.trial.id, treatmentId:res.treatment.id, replicate:res.replicate});
+}
+function showLabelMismatch(payload, res) {
+  const back = el("div", {class:"modal-back center", onclick:(e)=>{ if (e.target===back) document.body.removeChild(back); }});
+  const modal = el("div", {class:"modal"});
+  modal.appendChild(el("div", {class:"modal-head"}, el("h3", {}, "Label not found")));
+  modal.appendChild(el("div", {class:"modal-body"},
+    el("p", {}, res.error),
+    el("div", {class:"chip", style:{marginTop:"4px"}}, payload)
+  ));
+  modal.appendChild(el("div", {class:"modal-foot"},
+    el("button", {class:"btn sm ghost", onclick:()=>document.body.removeChild(back)}, "Close"),
+    el("button", {class:"btn sm", style:{width:"auto",background:"var(--green)",color:"#fff"}, onclick:async()=>{ document.body.removeChild(back); try { await loadIndex({fresh:true}); goToLabel(payload); } catch(e){ toast("Refresh failed","error"); } }}, "Refresh trial data")
+  ));
+  back.appendChild(modal);
+  document.body.appendChild(back);
+}
+function manualLabel() {
+  const back = el("div", {class:"modal-back center", onclick:(e)=>{ if (e.target===back) document.body.removeChild(back); }});
+  const modal = el("div", {class:"modal"});
+  modal.appendChild(el("div", {class:"modal-head"}, el("h3", {}, "Type label code")));
+  const input = el("input", {type:"text", placeholder:"e.g. TR-2026-0002-T07-R03", autofocus:"autofocus"});
+  modal.appendChild(el("div", {class:"modal-body"},
+    input,
+    el("div", {class:"small muted", style:{marginTop:"6px"}}, "Format: <TrialCode>-<TreatmentCode>-R##")
+  ));
+  modal.appendChild(el("div", {class:"modal-foot"},
+    el("button", {class:"btn sm ghost", onclick:()=>document.body.removeChild(back)}, "Cancel"),
+    el("button", {class:"btn sm", style:{width:"auto",background:"var(--green)",color:"#fff"}, onclick:()=>{
+      const v = input.value.trim(); if (!v) return;
+      document.body.removeChild(back);
+      goToLabel(v);
+    }}, "Go")
+  ));
+  back.appendChild(modal);
+  document.body.appendChild(back);
+  setTimeout(()=>input.focus(), 50);
+}
+$("#camCancel").addEventListener("click", stopScan);
+$("#camManual").addEventListener("click", ()=>{ stopScan(); manualLabel(); });
+
+/* ---------- header buttons ---------- */
+$("#btnBack").addEventListener("click", goBack);
+$("#btnMenu").addEventListener("click", () => openMenu());
+function openMenu() {
+  const back = el("div", {class:"modal-back", onclick:(e)=>{ if (e.target===back) document.body.removeChild(back); }});
+  const modal = el("div", {class:"modal"});
+  modal.appendChild(el("div", {class:"modal-head"}, el("h3", {}, "Menu")));
+  const body = el("div", {class:"modal-body"});
+  const nav = (route) => { document.body.removeChild(back); navigate(route); };
+  body.appendChild(el("button", {class:"btn ghost", style:{marginBottom:"8px"}, onclick:()=>nav({view:"home"})}, "🏠 Home"));
+  body.appendChild(el("button", {class:"btn ghost", style:{marginBottom:"8px"}, onclick:()=>nav({view:"trials"})}, "◈ Trials"));
+  body.appendChild(el("button", {class:"btn ghost", style:{marginBottom:"8px"}, onclick:()=>nav({view:"outbox"})},
+    "✉ Outbox", state.pending ? el("span", {class:"chip yellow", style:{marginLeft:"8px"}}, String(state.pending)) : null));
+  body.appendChild(el("button", {class:"btn ghost", onclick:()=>nav({view:"settings"})}, "⚙ Settings"));
+  modal.appendChild(body);
+  back.appendChild(modal);
+  document.body.appendChild(back);
+}
+
+/* =====================================================================
+   BOOT
+   ===================================================================== */
+window.addEventListener("online", () => { updateStatusTile(); attemptSync().catch(()=>{}); });
+window.addEventListener("offline", () => updateStatusTile());
+
+(async function boot() {
+  try {
+    await initMsal();
+    state.account = state.msal.getActiveAccount();
+    await refreshPendingCount();
+    if (state.account) {
+      // load workspace + index in background
+      try {
+        await resolveWorkspace();
+        await loadIndex({fresh:true});
+      } catch (e) {
+        toast("Could not load trial data: " + e.message, "error");
+        // fall back to cache if any
+        const cached = await idbGet("kv", "cachedIndex");
+        if (cached) { state.data = cached.data; state.dataFetchedAt = cached.at; }
+      }
+      attemptSync().catch(()=>{});
+    }
+  } catch (e) {
+    console.error(e);
+    toast("Startup: " + e.message, "error");
+  }
+  render();
+  // service worker
+  if ("serviceWorker" in navigator) {
+    try { await navigator.serviceWorker.register("./mobile-sw.js"); } catch (e) { console.warn(e); }
+  }
+})();
+</script>
+</body>
 </html>
