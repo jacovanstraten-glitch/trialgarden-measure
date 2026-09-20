@@ -1,0 +1,17 @@
+{
+  "name": "Trial Garden Field",
+  "short_name": "TG Field",
+  "description": "Scan Trial Garden labels and record observations from the field.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#00554B",
+  "theme_color": "#00554B",
+  "lang": "en-GB",
+  "icons": [
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
