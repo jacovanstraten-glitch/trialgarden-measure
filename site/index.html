@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#00554B">
+<meta name="theme-color" content="#9F55AE">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="TG Field">
@@ -14,10 +14,12 @@
 <script src="https://alcdn.msauth.net/browser/2.35.0/js/msal-browser.min.js" async></script>
 <style>
 :root{
+  /* Trial Garden Field = same brand tokens, but with PURPLE as the primary
+     surface so it reads visually distinct from the (green-headed) AER Field App. */
   --green:#00554B; --green-dark:#003d37; --green-soft:#e0ede9;
-  --purple:#9F55AE; --purple-soft:#f2e5f5;
+  --purple:#9F55AE; --purple-dark:#7a3d87; --purple-soft:#f2e5f5;
   --yellow:#FBED0E; --yellow-soft:#fdf9c8;
-  --bg:#FAFAFA; --card:#fff;
+  --bg:#FBF7FC; --card:#fff;   /* slight purple tint on background */
   --ink:#1c1f24; --muted:#5a6270; --muted-2:#8a94a1;
   --line:rgba(0,0,0,.08); --line-strong:#c8ccd3;
   --danger:#c62828; --danger-soft:#fdecea; --ok:#2e7d32;
@@ -35,7 +37,7 @@ body{
 /* ---------- HEADER ---------- */
 header{
   position:sticky;top:0;z-index:20;
-  background:var(--green);color:#fff;
+  background:var(--purple);color:#fff;
   display:flex;align-items:center;gap:10px;
   padding:12px 14px;
   padding-top:calc(12px + env(safe-area-inset-top));
@@ -62,17 +64,33 @@ header .badge{
   padding:0 6px;margin-left:4px;
 }
 .accent{
-  height:6px;background:linear-gradient(90deg,var(--green),var(--purple));
+  height:6px;background:linear-gradient(90deg,var(--purple),var(--green));
   position:relative;
 }
 .accent::after{
   content:"";position:absolute;right:3px;top:-1px;
   width:8px;height:8px;border-radius:50%;background:var(--yellow);
 }
+.accent::before{
+  content:"";position:absolute;left:3px;top:-1px;
+  width:8px;height:8px;border-radius:50%;background:var(--yellow);
+}
 main{
   flex:1;padding:16px;
-  padding-bottom:calc(24px + env(safe-area-inset-bottom));
+  padding-bottom:calc(48px + env(safe-area-inset-bottom));
 }
+#versionFooter{
+  position:fixed;left:0;right:0;bottom:0;
+  padding:6px 12px;padding-bottom:calc(6px + env(safe-area-inset-bottom));
+  background:rgba(159,85,174,.08);border-top:1px solid rgba(159,85,174,.2);
+  font-size:11px;color:var(--muted);text-align:center;
+  z-index:15;cursor:pointer;user-select:none;
+  font-family:ui-monospace,monospace;
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+#versionFooter:active{background:rgba(159,85,174,.16)}
+#versionFooter.stale{background:rgba(251,237,14,.35);color:#7a5f00;font-weight:600}
 .screen{display:none}
 .screen.on{display:block;animation:fade .15s ease}
 @keyframes fade{from{opacity:.4}to{opacity:1}}
@@ -243,18 +261,52 @@ textarea{min-height:80px;resize:vertical}
   display:flex;gap:8px;justify-content:flex-end;
   position:sticky;bottom:0;background:#fff;
 }
-/* ---------- PHOTO VIEWER ---------- */
-.photo-viewer{
-  position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:200;
-  display:flex;align-items:center;justify-content:center;padding:20px;
-  flex-direction:column;gap:12px;
+/* ---------- PHOTO VIEWER (full-screen, zoom + pan + swipe) ---------- */
+#photoViewer{
+  position:fixed;inset:0;background:#000;z-index:200;
+  display:none;flex-direction:column;
 }
-.photo-viewer img{max-width:100%;max-height:80vh;object-fit:contain}
-.photo-viewer .close{
-  position:absolute;top:20px;right:20px;
-  background:rgba(255,255,255,.2);color:#fff;border:0;
-  border-radius:20px;padding:8px 14px;font-family:inherit;
+#photoViewer.on{display:flex}
+#photoViewer .pv-top{
+  display:flex;justify-content:space-between;align-items:center;gap:8px;
+  padding:10px 12px;padding-top:calc(10px + env(safe-area-inset-top));
+  background:rgba(0,0,0,.7);
 }
+#pvCount{color:#fff;font-size:14px;font-weight:600;flex:1;text-align:center}
+#pvStage{
+  flex:1;overflow:hidden;position:relative;touch-action:none;
+  display:flex;align-items:center;justify-content:center;background:#000;
+}
+#pvImg{
+  max-width:100%;max-height:100%;transform-origin:center center;
+  will-change:transform;user-select:none;-webkit-user-drag:none;
+  transition:transform .05s linear;
+}
+#photoViewer .pv-bar{
+  display:flex;gap:8px;justify-content:center;align-items:center;
+  padding:12px;padding-bottom:calc(12px + env(safe-area-inset-bottom));
+  background:rgba(0,0,0,.7);
+}
+.pv-btn{
+  background:rgba(255,255,255,.16);color:#fff;border:0;
+  border-radius:10px;padding:11px 14px;font-size:14px;font-weight:600;
+  cursor:pointer;font-family:inherit;min-width:44px;
+}
+.pv-btn:disabled{opacity:.4}
+.pv-btn.danger{background:rgba(198,40,40,.9)}
+.pv-btn.wide{flex:1}
+/* ---------- MIC BUTTON (voice-to-text) ---------- */
+.field-with-mic{position:relative}
+.field-with-mic textarea{padding-right:52px}
+.mic-btn{
+  position:absolute;top:10px;right:10px;
+  width:36px;height:36px;border-radius:18px;
+  background:var(--purple-soft);color:var(--purple);border:1.5px solid var(--purple);
+  font-size:18px;line-height:1;cursor:pointer;font-family:inherit;
+  display:flex;align-items:center;justify-content:center;padding:0;
+}
+.mic-btn.rec{background:var(--danger);color:#fff;border-color:var(--danger);animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
 /* ---------- TOAST ---------- */
 #toast{
   position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
@@ -296,6 +348,7 @@ textarea{min-height:80px;resize:vertical}
   </header>
   <div class="accent"></div>
   <main id="main"></main>
+  <footer id="versionFooter" onclick="showVersionInfo()"></footer>
 </div>
 <div id="camWrap">
   <video id="camVideo" autoplay playsinline muted></video>
@@ -304,6 +357,21 @@ textarea{min-height:80px;resize:vertical}
   <div class="cambar">
     <button class="dark" id="camCancel">Cancel</button>
     <button id="camManual">Type code</button>
+  </div>
+</div>
+<div id="photoViewer" aria-hidden="true">
+  <div class="pv-top">
+    <button class="pv-btn" id="pvClose">✕ Close</button>
+    <span id="pvCount"></span>
+    <button class="pv-btn danger" id="pvDelete">🗑 Delete</button>
+  </div>
+  <div id="pvStage"><img id="pvImg" alt=""></div>
+  <div class="pv-bar">
+    <button class="pv-btn" id="pvPrev">‹ Prev</button>
+    <button class="pv-btn" id="pvZoomOut">－</button>
+    <button class="pv-btn" id="pvReset">100%</button>
+    <button class="pv-btn" id="pvZoomIn">＋</button>
+    <button class="pv-btn" id="pvNext">Next ›</button>
   </div>
 </div>
 <div id="toast"></div>
@@ -316,7 +384,7 @@ textarea{min-height:80px;resize:vertical}
    and uploads them as "delta" files to _inbox/ for the desktop app.
    ================================================================== */
 
-const APP_VERSION = "2026-09-20 · r1";
+const APP_VERSION = "2026-09-20 · r4";
 
 /* ---------- config ---------- */
 const MSAL_CLIENT_ID  = "d3f7ecc6-cdf5-4a5a-8528-263b09f6e3a4";
@@ -954,7 +1022,10 @@ function openAddObservation(ctx) {
   const body = el("div", {class:"modal-body"});
   body.appendChild(el("div", {class:"chip green", style:{marginBottom:"10px"}}, scopeLabel + " · " + (trial?.code||"")));
   const ta = el("textarea", {placeholder:"What did you see? (free text)"});
-  body.appendChild(ta);
+  const micBtn = el("button", {class:"mic-btn", type:"button",
+    title:"Dictate — tap once to start, again to stop",
+    onclick:(e)=>{ e.preventDefault(); toggleSpeech(ta, micBtn); }}, "🎤");
+  body.appendChild(el("div", {class:"field-with-mic"}, ta, micBtn));
   body.appendChild(el("div", {style:{marginTop:"8px"}},
     el("label", {}, "Date"),
     (() => { const inp = el("input", {type:"date", value: todayISO()}); return inp; })()
@@ -972,20 +1043,34 @@ function openAddObservation(ctx) {
     photoGrid.innerHTML = "";
     photos.forEach((p, i) => {
       const src = URL.createObjectURL(p);
-      const wrap = el("div", {style:{position:"relative"}},
-        el("img", {class:"thumb", src, alt:p.name||"photo"}),
-        el("div", {class:"rm", onclick:()=>{ photos.splice(i,1); renderPhotos(); }}, "×")
-      );
+      const img = el("img", {class:"thumb", src, alt:p.name||"photo",
+        onclick:()=>openPhotoViewer({
+          photos, initialIndex:i,
+          onDelete:(idx)=>{ photos.splice(idx,1); renderPhotos(); }
+        })});
+      const wrap = el("div", {style:{position:"relative"}}, img,
+        el("div", {class:"rm", onclick:(e)=>{ e.stopPropagation(); photos.splice(i,1); renderPhotos(); }}, "×"));
       photoGrid.appendChild(wrap);
     });
+    const addPhoto = async (files) => {
+      const overlayText = overlayLinesFor(ctx);
+      for (const f of files) {
+        const burned = await burnOverlay(f, overlayText);
+        // preserve a nice filename
+        const stamp = new Date().toISOString().replace(/[:.]/g,"-").slice(0,19);
+        const nice = new File([burned], `${stamp}.jpg`, {type: burned.type || "image/jpeg"});
+        photos.push(nice);
+      }
+      renderPhotos();
+    };
     const addCam = el("label", {class:"addphoto", title:"Take photo"},
       "📷", el("small", {}, "Camera"),
       el("input", {type:"file", accept:"image/*", capture:"environment", style:{display:"none"},
-        onchange:(e)=>{ for (const f of e.target.files||[]) photos.push(f); renderPhotos(); e.target.value=""; }}));
+        onchange:async(e)=>{ const files = Array.from(e.target.files||[]); e.target.value = ""; if (!files.length) return; toast("Adding overlay…"); await addPhoto(files); toast("Photo added","success"); }}));
     const addPick = el("label", {class:"addphoto", title:"From gallery"},
       "🖼", el("small", {}, "Gallery"),
       el("input", {type:"file", accept:"image/*", multiple:"multiple", style:{display:"none"},
-        onchange:(e)=>{ for (const f of e.target.files||[]) photos.push(f); renderPhotos(); e.target.value=""; }}));
+        onchange:async(e)=>{ const files = Array.from(e.target.files||[]); e.target.value = ""; if (!files.length) return; toast("Adding overlay…"); await addPhoto(files); toast(files.length + " photo(s) added","success"); }}));
     photoGrid.appendChild(addCam);
     photoGrid.appendChild(addPick);
   }
@@ -1096,6 +1181,27 @@ function renderSettings() {
         try { await loadIndex({fresh:true}); toast("Refreshed","success"); render(); }
         catch(e){ toast("Refresh failed: "+e.message,"error"); }
       }}, "Refresh trial data"))
+  ));
+  wrap.appendChild(el("div", {class:"card"},
+    el("h2", {class:"section", style:{margin:"0 0 6px"}}, "Voice input"),
+    el("div", {class:"muted small", style:{marginBottom:"8px"}},
+      "Language the 🎤 button uses to convert speech into text."),
+    (() => {
+      const cur = localStorage.getItem("tg-speech-lang") || navigator.language || "en-US";
+      const sel = el("select", {},
+        ...[
+          ["en-US", "English (US)"],
+          ["en-GB", "English (UK)"],
+          ["nl-NL", "Dutch (Nederlands)"],
+          ["am-ET", "Amharic (አማርኛ)"],
+        ].map(([code, label]) => {
+          const o = el("option", {value:code}, label);
+          if (code === cur) o.selected = true;
+          return o;
+        }));
+      sel.onchange = () => { localStorage.setItem("tg-speech-lang", sel.value); toast("Voice language: " + sel.value, "success"); };
+      return sel;
+    })()
   ));
   wrap.appendChild(el("div", {class:"card"},
     el("h2", {class:"section", style:{margin:"0 0 6px"}}, "About"),
@@ -1221,12 +1327,384 @@ function openMenu() {
 }
 
 /* =====================================================================
+   PHOTO OVERLAY  (burn trial + treatment info onto every captured photo)
+   ===================================================================== */
+function overlayLinesFor(ctx) {
+  // ctx = {scope, trialId, targetId, replicate}
+  // At most 3 lines, in this order:
+  //   1. <TrialCode> [· R##] [· TreatmentCode]
+  //   2. Treatment (or trial) name — omitted for trial-scope shots with no name
+  //   3. Timestamp
+  if (!state.data) return [];
+  const trial = trialById(ctx.trialId);
+  if (!trial) return [];
+  const stamp = new Date().toLocaleString(undefined, {year:"numeric", month:"short", day:"numeric", hour:"2-digit", minute:"2-digit"});
+  const lines = [];
+  if (ctx.scope === "trial") {
+    lines.push(trial.code || "");
+    if (trial.name) lines.push(trial.name);
+    lines.push(stamp);
+  } else {
+    const tr = trial.treatments.find(x => x.id === ctx.targetId);
+    const parts = [trial.code || ""];
+    if (ctx.scope === "replicate") parts.push("R" + String(ctx.replicate).padStart(2,"0"));
+    if (tr?.code) parts.push(tr.code);
+    lines.push(parts.filter(Boolean).join(" · "));
+    if (tr?.name) lines.push(tr.name);
+    lines.push(stamp);
+  }
+  return lines.slice(0, 3);
+}
+async function burnOverlay(blob, lines) {
+  if (!lines || !lines.length) return blob;
+  try {
+    // Prefer createImageBitmap (respects EXIF orientation on modern browsers)
+    let bmp;
+    try { bmp = await createImageBitmap(blob, {imageOrientation:"from-image"}); }
+    catch { bmp = await createImageBitmap(blob); }
+    const w = bmp.width, h = bmp.height;
+    const canvas = document.createElement("canvas");
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(bmp, 0, 0);
+    // font size proportional to shortest side
+    const shortSide = Math.min(w, h);
+    const fontPx = Math.max(18, Math.round(shortSide * 0.032));
+    const pad = Math.round(fontPx * 0.7);
+    ctx.font = `bold ${fontPx}px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif`;
+    ctx.textBaseline = "top";
+    // measure & wrap each line to canvas width (- 2*pad)
+    const maxW = w - 2*pad;
+    const MAX_LINES = 3;
+    const drawn = [];
+    outer: for (const raw of lines) {
+      if (!raw) continue;
+      const words = String(raw).split(/\s+/);
+      let cur = "";
+      for (const wd of words) {
+        const cand = cur ? cur + " " + wd : wd;
+        if (ctx.measureText(cand).width > maxW && cur) {
+          drawn.push(cur);
+          if (drawn.length >= MAX_LINES) break outer;
+          cur = wd;
+        } else cur = cand;
+      }
+      if (cur) {
+        drawn.push(cur);
+        if (drawn.length >= MAX_LINES) break;
+      }
+    }
+    // Ellipsize the last kept line if it's the third and there was more to draw.
+    if (drawn.length === MAX_LINES) {
+      const last = drawn[MAX_LINES - 1];
+      // measure last line + ellipsis and truncate if it would still overflow
+      let s = last;
+      while (ctx.measureText(s + "…").width > maxW && s.length > 1) s = s.slice(0, -1);
+      if (s !== last) drawn[MAX_LINES - 1] = s + "…";
+    }
+    const lineH = fontPx + Math.round(fontPx * 0.25);
+    const stripH = Math.min(drawn.length * lineH + 2*pad, Math.round(h * 0.4));
+    // dark strip
+    ctx.fillStyle = "rgba(0,0,0,0.72)";
+    ctx.fillRect(0, h - stripH, w, stripH);
+    // brand accent line at the top of the strip
+    ctx.fillStyle = "#9F55AE";
+    ctx.fillRect(0, h - stripH, w, 3);
+    ctx.fillStyle = "#fff";
+    for (let i = 0; i < drawn.length; i++) {
+      ctx.fillText(drawn[i], pad, h - stripH + pad + i * lineH);
+    }
+    // yellow "vein" dot on the right of the accent line
+    ctx.fillStyle = "#FBED0E";
+    ctx.beginPath();
+    ctx.arc(w - Math.round(pad*0.6), h - stripH + 1, 5, 0, Math.PI*2);
+    ctx.fill();
+
+    const out = await new Promise(res => canvas.toBlob(res, "image/jpeg", 0.88));
+    return out || blob;
+  } catch (e) {
+    console.warn("overlay burn failed:", e);
+    return blob;
+  }
+}
+
+/* =====================================================================
+   PHOTO VIEWER  (full-screen with zoom / pan / prev / next / delete)
+   ===================================================================== */
+const pv = {
+  photos: null,        // array-of-Blob or array-of-{blob, name}
+  index: 0,
+  onDelete: null,
+  scale: 1,
+  tx: 0, ty: 0,
+  pointerA: null, pointerB: null,
+  urls: []
+};
+function openPhotoViewer({photos, initialIndex=0, onDelete=null}) {
+  pv.photos = photos;
+  pv.index = Math.max(0, Math.min(initialIndex, photos.length - 1));
+  pv.onDelete = onDelete;
+  pv.scale = 1; pv.tx = 0; pv.ty = 0;
+  // create object URLs for each photo (deferred)
+  pv.urls = photos.map(p => (p instanceof Blob) ? URL.createObjectURL(p) : (p.url || (p.blob ? URL.createObjectURL(p.blob) : null)));
+  $("#pvDelete").style.display = onDelete ? "" : "none";
+  $("#photoViewer").classList.add("on");
+  pvUpdate();
+  document.body.style.overflow = "hidden";
+}
+function pvUpdate() {
+  if (!pv.photos || !pv.photos.length) { closePhotoViewer(); return; }
+  pv.index = Math.max(0, Math.min(pv.index, pv.photos.length - 1));
+  $("#pvImg").src = pv.urls[pv.index] || "";
+  $("#pvCount").textContent = (pv.index + 1) + " / " + pv.photos.length;
+  $("#pvPrev").disabled = pv.index === 0;
+  $("#pvNext").disabled = pv.index === pv.photos.length - 1;
+  pvApplyTransform();
+}
+function pvApplyTransform() {
+  const img = $("#pvImg");
+  img.style.transform = `translate(${pv.tx}px, ${pv.ty}px) scale(${pv.scale})`;
+}
+function pvResetZoom() { pv.scale = 1; pv.tx = 0; pv.ty = 0; pvApplyTransform(); }
+function pvNext() { if (pv.index < pv.photos.length - 1) { pv.index++; pvResetZoom(); pvUpdate(); } }
+function pvPrev() { if (pv.index > 0) { pv.index--; pvResetZoom(); pvUpdate(); } }
+function pvZoom(factor) { pv.scale = Math.max(1, Math.min(6, pv.scale * factor)); if (pv.scale === 1) { pv.tx = pv.ty = 0; } pvApplyTransform(); }
+function pvDelete() {
+  if (!pv.onDelete || !pv.photos.length) return;
+  const idx = pv.index;
+  // release the URL for the deleted one
+  const u = pv.urls[idx]; if (u && u.startsWith("blob:")) URL.revokeObjectURL(u);
+  pv.urls.splice(idx, 1);
+  pv.onDelete(idx);
+  if (!pv.photos.length) { closePhotoViewer(); return; }
+  if (pv.index >= pv.photos.length) pv.index = pv.photos.length - 1;
+  pvResetZoom();
+  pvUpdate();
+}
+function closePhotoViewer() {
+  $("#photoViewer").classList.remove("on");
+  document.body.style.overflow = "";
+  for (const u of pv.urls) if (u && u.startsWith("blob:")) URL.revokeObjectURL(u);
+  pv.urls = []; pv.photos = null; pv.onDelete = null;
+}
+/* pointer / touch handlers for pinch + pan + swipe */
+(function bindPV(){
+  const stage = $("#pvStage");
+  const active = new Map();
+  let startDist = 0, startScale = 1, startTx = 0, startTy = 0, startX = 0, startY = 0, swipeCandidate = false;
+  stage.addEventListener("pointerdown", e => {
+    stage.setPointerCapture(e.pointerId);
+    active.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    if (active.size === 1) {
+      startX = e.clientX; startY = e.clientY;
+      startTx = pv.tx; startTy = pv.ty;
+      swipeCandidate = pv.scale === 1;
+    } else if (active.size === 2) {
+      const pts = [...active.values()];
+      startDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      startScale = pv.scale;
+      swipeCandidate = false;
+    }
+  });
+  stage.addEventListener("pointermove", e => {
+    if (!active.has(e.pointerId)) return;
+    active.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    if (active.size === 2) {
+      const pts = [...active.values()];
+      const d = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      if (startDist > 0) {
+        pv.scale = Math.max(1, Math.min(6, startScale * (d / startDist)));
+        if (pv.scale === 1) { pv.tx = pv.ty = 0; }
+        pvApplyTransform();
+      }
+    } else if (active.size === 1 && pv.scale > 1) {
+      pv.tx = startTx + (e.clientX - startX);
+      pv.ty = startTy + (e.clientY - startY);
+      pvApplyTransform();
+    }
+  });
+  stage.addEventListener("pointerup", e => {
+    const rec = active.get(e.pointerId);
+    active.delete(e.pointerId);
+    if (rec && swipeCandidate && active.size === 0) {
+      const dx = e.clientX - startX, dy = e.clientY - startY;
+      if (Math.abs(dx) > 60 && Math.abs(dy) < 40) {
+        if (dx < 0) pvNext(); else pvPrev();
+      }
+    }
+  });
+  stage.addEventListener("pointercancel", e => active.delete(e.pointerId));
+  // double-tap to zoom
+  let lastTap = 0;
+  stage.addEventListener("click", e => {
+    const now = Date.now();
+    if (now - lastTap < 350) { pvZoom(pv.scale > 1 ? 0.5 : 2); }
+    lastTap = now;
+  });
+})();
+$("#pvClose").addEventListener("click", closePhotoViewer);
+$("#pvPrev").addEventListener("click", pvPrev);
+$("#pvNext").addEventListener("click", pvNext);
+$("#pvZoomIn").addEventListener("click", () => pvZoom(1.4));
+$("#pvZoomOut").addEventListener("click", () => pvZoom(1/1.4));
+$("#pvReset").addEventListener("click", pvResetZoom);
+$("#pvDelete").addEventListener("click", async () => {
+  if (!(await confirmDialogSimple("Delete this photo?"))) return;
+  pvDelete();
+});
+document.addEventListener("keydown", e => {
+  if (!$("#photoViewer").classList.contains("on")) return;
+  if (e.key === "Escape") closePhotoViewer();
+  else if (e.key === "ArrowLeft") pvPrev();
+  else if (e.key === "ArrowRight") pvNext();
+  else if (e.key === "+" || e.key === "=") pvZoom(1.4);
+  else if (e.key === "-") pvZoom(1/1.4);
+  else if (e.key === "0") pvResetZoom();
+});
+async function confirmDialogSimple(message) {
+  return new Promise(res => {
+    const back = el("div", {class:"modal-back center", onclick:(e)=>{ if (e.target===back) { document.body.removeChild(back); res(false); } }});
+    const modal = el("div", {class:"modal"});
+    modal.appendChild(el("div", {class:"modal-body"}, el("p", {}, message)));
+    modal.appendChild(el("div", {class:"modal-foot"},
+      el("button", {class:"btn sm ghost", onclick:()=>{ document.body.removeChild(back); res(false); }}, "Cancel"),
+      el("button", {class:"btn sm", style:{background:"var(--danger)", color:"#fff", width:"auto"},
+        onclick:()=>{ document.body.removeChild(back); res(true); }}, "Delete")
+    ));
+    back.appendChild(modal); document.body.appendChild(back);
+  });
+}
+
+/* =====================================================================
+   VOICE-TO-TEXT (Web Speech API) — 🎤 button on the observation textarea
+   ===================================================================== */
+let recog = null, recogBtn = null;
+function speechLang() {
+  return localStorage.getItem("tg-speech-lang") || navigator.language || "en-US";
+}
+function toggleSpeech(ta, btn) {
+  if (recog && recog._active && recogBtn === btn) { stopSpeech(); return; }
+  if (recog && recog._active) stopSpeech();
+  startSpeech(ta, btn);
+}
+function startSpeech(ta, btn) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { toast("Voice input isn't available on this device", "error"); return; }
+  recog = new SR();
+  recog.lang = speechLang();
+  recog.interimResults = true;
+  recog.continuous = true;
+  let committed = ta.value ? ta.value.replace(/\s+$/, "") + " " : "";
+  recog.onresult = (ev) => {
+    let interim = "";
+    for (let i = ev.resultIndex; i < ev.results.length; i++) {
+      const r = ev.results[i];
+      if (r.isFinal) committed += r[0].transcript.trim() + " ";
+      else interim += r[0].transcript;
+    }
+    ta.value = (committed + interim).replace(/\s+/g, " ");
+  };
+  recog.onerror = (e) => {
+    if (e && (e.error === "not-allowed" || e.error === "service-not-allowed")) {
+      toast("Microphone permission needed", "error"); stopSpeech();
+    } else if (e && e.error === "no-speech") { /* keep listening */ }
+    else if (e && e.error === "language-not-supported") {
+      toast("Language " + recog.lang + " not supported — using en-US", "error");
+      stopSpeech();
+      localStorage.setItem("tg-speech-lang", "en-US");
+    } else if (e && e.error) {
+      toast("Voice: " + e.error, "error"); stopSpeech();
+    }
+  };
+  recog.onend = () => {
+    if (recog && recog._active) { try { recog.start(); } catch {} }
+    else { if (recogBtn) { recogBtn.classList.remove("rec"); recogBtn.textContent = "🎤"; recogBtn = null; } recog = null; }
+  };
+  recog._active = true;
+  recogBtn = btn;
+  btn.classList.add("rec");
+  btn.textContent = "⏹";
+  try { recog.start(); } catch (e) { console.warn(e); }
+}
+function stopSpeech() {
+  if (recog) { recog._active = false; try { recog.stop(); } catch {} }
+  if (recogBtn) { recogBtn.classList.remove("rec"); recogBtn.textContent = "🎤"; recogBtn = null; }
+}
+
+/* =====================================================================
+   VERSION FOOTER  (visible confirmation that a refresh landed)
+   ===================================================================== */
+function updateVersionFooter() {
+  const f = document.getElementById("versionFooter");
+  if (!f) return;
+  f.textContent = `v ${APP_VERSION}  ·  tap to check for updates`;
+}
+async function getSwCacheName() {
+  try {
+    if (!("caches" in window)) return null;
+    const keys = await caches.keys();
+    return keys.find(k => k.startsWith("trialgarden-field-")) || null;
+  } catch { return null; }
+}
+async function showVersionInfo() {
+  const cacheName = await getSwCacheName();
+  const reg = ("serviceWorker" in navigator) ? await navigator.serviceWorker.getRegistration().catch(()=>null) : null;
+  const online = navigator.onLine;
+  const back = el("div", {class:"modal-back center", onclick:(e)=>{ if (e.target===back) document.body.removeChild(back); }});
+  const modal = el("div", {class:"modal"});
+  modal.appendChild(el("div", {class:"modal-head"}, el("h3", {}, "App version")));
+  modal.appendChild(el("div", {class:"modal-body"},
+    el("div", {class:"kv"}, el("b", {}, "App"), el("span", {class:"mono"}, APP_VERSION)),
+    el("div", {class:"kv"}, el("b", {}, "Cache"), el("span", {class:"mono small"}, cacheName || "—")),
+    el("div", {class:"kv"}, el("b", {}, "Online"), el("span", {}, online ? "yes" : "no")),
+    el("div", {class:"kv"}, el("b", {}, "SW installed"), el("span", {}, reg ? "yes" : "no")),
+    el("p", {class:"muted small", style:{marginTop:"10px"}},
+      "Force refresh downloads the latest app files from the server, clears the on-device cache, and reloads. Use this after a new version is deployed."),
+    el("button", {class:"btn", style:{marginTop:"10px"}, onclick:forceRefresh}, "🔄 Force refresh")
+  ));
+  modal.appendChild(el("div", {class:"modal-foot"},
+    el("button", {class:"btn sm ghost", onclick:()=>document.body.removeChild(back)}, "Close")
+  ));
+  back.appendChild(modal); document.body.appendChild(back);
+}
+async function forceRefresh() {
+  try {
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+    if ("serviceWorker" in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for (const r of regs) { try { await r.unregister(); } catch {} }
+    }
+  } catch (e) { console.warn(e); }
+  // hard reload with a cache-buster on the URL
+  const u = new URL(location.href);
+  u.searchParams.set("_r", Date.now().toString(36));
+  location.replace(u.toString());
+}
+// Poll the server for a newer index.html; if the APP_VERSION string changes, mark footer as stale
+async function checkForUpdate() {
+  try {
+    const r = await fetch(location.pathname.replace(/[^/]*$/, "") + "index.html", {cache:"no-store"});
+    if (!r.ok) return;
+    const html = await r.text();
+    const m = html.match(/const APP_VERSION\s*=\s*"([^"]+)"/);
+    if (m && m[1] !== APP_VERSION) {
+      const f = document.getElementById("versionFooter");
+      if (f) { f.classList.add("stale"); f.textContent = `v ${APP_VERSION}  ·  newer v ${m[1]} available — tap`; }
+    }
+  } catch { /* offline, ignore */ }
+}
+
+/* =====================================================================
    BOOT
    ===================================================================== */
 window.addEventListener("online", () => { updateStatusTile(); attemptSync().catch(()=>{}); });
 window.addEventListener("offline", () => updateStatusTile());
 
 (async function boot() {
+  updateVersionFooter();
   try {
     await initMsal();
     state.account = state.msal.getActiveAccount();
@@ -1253,6 +1731,11 @@ window.addEventListener("offline", () => updateStatusTile());
   if ("serviceWorker" in navigator) {
     try { await navigator.serviceWorker.register("./mobile-sw.js"); } catch (e) { console.warn(e); }
   }
+  // check server for a newer version every time the app comes to the foreground
+  checkForUpdate();
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") checkForUpdate();
+  });
 })();
 </script>
 </body>
