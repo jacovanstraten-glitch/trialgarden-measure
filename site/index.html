@@ -384,7 +384,7 @@ textarea{min-height:80px;resize:vertical}
    and uploads them as "delta" files to _inbox/ for the desktop app.
    ================================================================== */
 
-const APP_VERSION = "2026-09-20 · r4";
+const APP_VERSION = "2026-09-24 · r5";
 
 /* ---------- config ---------- */
 const MSAL_CLIENT_ID  = "d3f7ecc6-cdf5-4a5a-8528-263b09f6e3a4";
@@ -1577,8 +1577,36 @@ async function confirmDialogSimple(message) {
 
 /* =====================================================================
    VOICE-TO-TEXT (Web Speech API) — 🎤 button on the observation textarea
+
+   Android Chrome ends recognition every ~60 s (or on silence) and we
+   auto-restart it. Three well-known dictation bugs stack on top of each
+   other and used to produce output like
+     "the / the plants / the plants are / the plants are just / …"
+   The fix (mirrors AER Field App r20):
+
+     1) Same-index re-delivery: within one session the browser can hand
+        back the same final result at the same index multiple times
+        because ev.resultIndex doesn't advance. Guard: only accept a
+        final on a strictly HIGHER index than the highest we've already
+        committed in this session (sessionMaxFinal).
+
+     2) Progressive finalization: Android commits each interim as a
+        separate final at a NEW index — "the" (final idx 0), "the
+        plants" (final idx 1), "the plants are" (final idx 2), … Each
+        is genuinely new text, so naive dedup misses it. Guard: if the
+        new final starts with the last-committed one as a prefix
+        (followed by a space or comma), REPLACE the last entry instead
+        of appending — same phrase growing.
+
+     3) Restart-echo: some phones re-emit the previous session's last
+        final as index 0 of the new session. Guard: skip when the
+        incoming final equals the last-committed one (case-insensitive).
+
+   State lives outside the recognizer so it survives auto-restarts.
    ===================================================================== */
 let recog = null, recogBtn = null;
+let _sp = { ta: null, prefix: "", committed: [], lastCommittedLC: "", sessionMaxFinal: -1 };
+
 function speechLang() {
   return localStorage.getItem("tg-speech-lang") || navigator.language || "en-US";
 }
@@ -1587,6 +1615,11 @@ function toggleSpeech(ta, btn) {
   if (recog && recog._active) stopSpeech();
   startSpeech(ta, btn);
 }
+function _renderSpeech(interim) {
+  if (!_sp.ta) return;
+  const body = (_sp.committed.join(" ") + (interim ? " " + interim : "")).trim();
+  _sp.ta.value = (_sp.prefix + body).replace(/\s+/g, " ").trim();
+}
 function startSpeech(ta, btn) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) { toast("Voice input isn't available on this device", "error"); return; }
@@ -1594,15 +1627,50 @@ function startSpeech(ta, btn) {
   recog.lang = speechLang();
   recog.interimResults = true;
   recog.continuous = true;
-  let committed = ta.value ? ta.value.replace(/\s+$/, "") + " " : "";
+
+  // Snapshot the textarea contents at press-time; everything typed BEFORE
+  // the mic went on is preserved via prefix, everything dictated after it
+  // is rebuilt from committed[] on every event so a re-emitted result can't
+  // leak through.
+  _sp.ta = ta;
+  _sp.prefix = ta.value ? ta.value.replace(/\s+$/, "") + " " : "";
+  _sp.committed = [];
+  _sp.lastCommittedLC = "";
+  _sp.sessionMaxFinal = -1;
+
   recog.onresult = (ev) => {
     let interim = "";
-    for (let i = ev.resultIndex; i < ev.results.length; i++) {
+    for (let i = 0; i < ev.results.length; i++) {
       const r = ev.results[i];
-      if (r.isFinal) committed += r[0].transcript.trim() + " ";
-      else interim += r[0].transcript;
+      const text = ((r[0] && r[0].transcript) || "").trim();
+      if (!text) continue;
+      if (r.isFinal) {
+        // GUARD 1 — strictly higher index than any final we've committed
+        if (i > _sp.sessionMaxFinal) {
+          _sp.sessionMaxFinal = i;
+          const lc = text.toLowerCase();
+          const lastLC = _sp.lastCommittedLC;
+          if (lc === lastLC) {
+            // GUARD 3 — exact repeat = restart-echo, skip
+          } else if (lastLC && (lc.startsWith(lastLC + " ") || lc.startsWith(lastLC + ","))) {
+            // GUARD 2 — progressive finalization: new final extends the last
+            //           committed one, so REPLACE instead of appending
+            _sp.committed[_sp.committed.length - 1] = text;
+            _sp.lastCommittedLC = lc;
+          } else {
+            _sp.committed.push(text);
+            _sp.lastCommittedLC = lc;
+          }
+        }
+      } else {
+        // GUARD 4 — only take interim past the last finalized index, so a
+        // stale mid-progression interim can't tag onto the tail
+        if (i > _sp.sessionMaxFinal) {
+          interim += (interim ? " " : "") + text;
+        }
+      }
     }
-    ta.value = (committed + interim).replace(/\s+/g, " ");
+    _renderSpeech(interim);
   };
   recog.onerror = (e) => {
     if (e && (e.error === "not-allowed" || e.error === "service-not-allowed")) {
@@ -1617,8 +1685,13 @@ function startSpeech(ta, btn) {
     }
   };
   recog.onend = () => {
-    if (recog && recog._active) { try { recog.start(); } catch {} }
-    else { if (recogBtn) { recogBtn.classList.remove("rec"); recogBtn.textContent = "🎤"; recogBtn = null; } recog = null; }
+    if (recog && recog._active) {
+      _sp.sessionMaxFinal = -1; // fresh index space in the new session
+      try { recog.start(); } catch {}
+    } else {
+      if (recogBtn) { recogBtn.classList.remove("rec"); recogBtn.textContent = "🎤"; recogBtn = null; }
+      recog = null;
+    }
   };
   recog._active = true;
   recogBtn = btn;

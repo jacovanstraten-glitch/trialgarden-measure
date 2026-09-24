@@ -1,6 +1,6 @@
 /* Trial Garden Field — service worker
    Bump CACHE version when you change the app files so phones pick up the new build. */
-const CACHE = "trialgarden-field-v7-2026-09-20r5";
+const CACHE = "trialgarden-field-v8-2026-09-24r5";
 const ROOT = new URL("./", self.location.href);
 const OFFLINE_URL = new URL("./", ROOT).href;
 const SHELL = [
