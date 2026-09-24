@@ -317,6 +317,19 @@ textarea{min-height:80px;resize:vertical}
 #toast.on{opacity:1}
 #toast.error{background:var(--danger)}
 #toast.success{background:var(--ok)}
+/* ---------- EXIT BAR (back gesture on home screen) ---------- */
+#exitBar{
+  position:fixed;left:50%;bottom:16px;transform:translate(-50%,140%);
+  width:min(92%,420px);background:#1c1f24;color:#fff;border-radius:14px;
+  padding:12px 12px 12px 16px;display:flex;align-items:center;gap:10px;
+  box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:400;transition:transform .22s ease;
+}
+#exitBar.on{transform:translate(-50%,0)}
+#exitBar .txt{flex:1;font-size:14px;line-height:1.3}
+#exitBar .txt small{display:block;color:#b9c0c9;font-size:12px}
+#exitBar button{border:0;border-radius:10px;padding:9px 14px;font:600 14px/1 inherit;font-family:inherit;cursor:pointer}
+#exitBar .stay{background:#3a3f47;color:#fff}
+#exitBar .close{background:var(--purple);color:#fff}
 /* ---------- SPINNER ---------- */
 .spinner{
   display:inline-block;width:16px;height:16px;
@@ -384,7 +397,7 @@ textarea{min-height:80px;resize:vertical}
    and uploads them as "delta" files to _inbox/ for the desktop app.
    ================================================================== */
 
-const APP_VERSION = "2026-09-24 · r5";
+const APP_VERSION = "2026-09-24 · r7";
 
 /* ---------- config ---------- */
 const MSAL_CLIENT_ID  = "d3f7ecc6-cdf5-4a5a-8528-263b09f6e3a4";
@@ -1109,6 +1122,12 @@ function openAddObservation(ctx) {
   back.appendChild(modal);
   document.body.appendChild(back);
   function close() { try { document.body.removeChild(back); } catch {} }
+  // back gesture: don't silently throw away a half-written observation
+  back._onBack = async () => {
+    if (!ta.value.trim() && !photos.length) { close(); return; }
+    const ok = await confirmDialogSimple("Discard this observation? The text and photos you added will be lost.", "Discard");
+    if (ok) close();
+  };
 }
 
 /* ---------- OUTBOX ---------- */
@@ -1332,7 +1351,7 @@ function openMenu() {
 function overlayLinesFor(ctx) {
   // ctx = {scope, trialId, targetId, replicate}
   // At most 3 lines, in this order:
-  //   1. <TrialCode> [· R##] [· TreatmentCode]
+  //   1. <TrialCode> · <TreatmentCode> · R## (or "all reps" for treatment-level shots)
   //   2. Treatment (or trial) name — omitted for trial-scope shots with no name
   //   3. Timestamp
   if (!state.data) return [];
@@ -1346,9 +1365,9 @@ function overlayLinesFor(ctx) {
     lines.push(stamp);
   } else {
     const tr = trial.treatments.find(x => x.id === ctx.targetId);
-    const parts = [trial.code || ""];
-    if (ctx.scope === "replicate") parts.push("R" + String(ctx.replicate).padStart(2,"0"));
-    if (tr?.code) parts.push(tr.code);
+    // always the same order: trial · treatment · replicate
+    const parts = [trial.code || "", tr?.code || ""];
+    parts.push(ctx.scope === "replicate" ? "R" + String(ctx.replicate).padStart(2,"0") : "all reps");
     lines.push(parts.filter(Boolean).join(" · "));
     if (tr?.name) lines.push(tr.name);
     lines.push(stamp);
@@ -1561,7 +1580,7 @@ document.addEventListener("keydown", e => {
   else if (e.key === "-") pvZoom(1/1.4);
   else if (e.key === "0") pvResetZoom();
 });
-async function confirmDialogSimple(message) {
+async function confirmDialogSimple(message, okLabel = "Delete") {
   return new Promise(res => {
     const back = el("div", {class:"modal-back center", onclick:(e)=>{ if (e.target===back) { document.body.removeChild(back); res(false); } }});
     const modal = el("div", {class:"modal"});
@@ -1569,7 +1588,7 @@ async function confirmDialogSimple(message) {
     modal.appendChild(el("div", {class:"modal-foot"},
       el("button", {class:"btn sm ghost", onclick:()=>{ document.body.removeChild(back); res(false); }}, "Cancel"),
       el("button", {class:"btn sm", style:{background:"var(--danger)", color:"#fff", width:"auto"},
-        onclick:()=>{ document.body.removeChild(back); res(true); }}, "Delete")
+        onclick:()=>{ document.body.removeChild(back); res(true); }}, okLabel)
     ));
     back.appendChild(modal); document.body.appendChild(back);
   });
@@ -1775,6 +1794,64 @@ async function checkForUpdate() {
    ===================================================================== */
 window.addEventListener("online", () => { updateStatusTile(); attemptSync().catch(()=>{}); });
 window.addEventListener("offline", () => updateStatusTile());
+
+/* =====================================================================
+   BACK GESTURE / BACK BUTTON
+   Swiping back never closes the app straight away: it closes the open
+   sheet or camera first, then steps back one screen. On the home screen
+   a bar asks whether to close — swipe back again or tap Close to leave.
+   ===================================================================== */
+const backNav = { exiting:false, barTimer:null };
+function armBackTrap() { try { history.pushState({tgTrap:Date.now()}, ""); } catch {} }
+function handleInAppBack() {
+  // 1. camera / QR scanner
+  if ($("#camWrap")?.classList.contains("on")) { stopScan(); return true; }
+  // 2. topmost sheet or dialog
+  const sheets = document.querySelectorAll(".modal-back");
+  if (sheets.length) {
+    const top = sheets[sheets.length - 1];
+    if (typeof top._onBack === "function") top._onBack(); else top.click();
+    return true;
+  }
+  // 3. previous screen
+  if (state.history.length) { goBack(); return true; }
+  // 4. any other screen without history → home
+  if (state.account && state.route.view !== "home") { navigate({view:"home"}, {push:false}); return true; }
+  return false;
+}
+function hideExitBar(rearm = true) {
+  clearTimeout(backNav.barTimer);
+  $("#exitBar")?.classList.remove("on");
+  if (rearm) armBackTrap();
+}
+function showExitBar() {
+  let bar = $("#exitBar");
+  if (!bar) {
+    bar = el("div", {id:"exitBar", role:"alertdialog", "aria-label":"Close app"},
+      el("div", {class:"txt"}, "Close Trial Garden Field?", el("small", {}, "Swipe back again to close")),
+      el("button", {class:"stay", onclick:()=>hideExitBar(true)}, "Stay"),
+      el("button", {class:"close", onclick:()=>exitApp()}, "Close"));
+    document.body.appendChild(bar);
+  }
+  requestAnimationFrame(() => bar.classList.add("on"));
+  clearTimeout(backNav.barTimer);
+  // no answer → stay in the app
+  backNav.barTimer = setTimeout(() => hideExitBar(true), 4000);
+}
+function exitApp() {
+  backNav.exiting = true;
+  clearTimeout(backNav.barTimer);
+  $("#exitBar")?.classList.remove("on");
+  history.back();                       // leave the app's first history entry → app closes
+  setTimeout(() => { try { window.close(); } catch {} }, 300);
+}
+window.addEventListener("popstate", () => {
+  if (backNav.exiting) return;
+  if ($("#exitBar")?.classList.contains("on")) { exitApp(); return; }   // second swipe on home
+  if (handleInAppBack()) { armBackTrap(); return; }
+  showExitBar();   // on home: the trap is used up, so the next swipe closes the app
+});
+armBackTrap();
 
 (async function boot() {
   updateVersionFooter();
