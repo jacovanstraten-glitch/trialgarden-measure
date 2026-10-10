@@ -397,7 +397,7 @@ textarea{min-height:80px;resize:vertical}
    and uploads them as "delta" files to _inbox/ for the desktop app.
    ================================================================== */
 
-const APP_VERSION = "2026-09-24 · r7";
+const APP_VERSION = "2026-10-10 · r8";
 
 /* ---------- config ---------- */
 const MSAL_CLIENT_ID  = "d3f7ecc6-cdf5-4a5a-8528-263b09f6e3a4";
@@ -686,7 +686,15 @@ async function enqueueObservation(observation, photoBlobs) {
   attemptSync().catch(()=>{});
   return record;
 }
-async function attemptSync() {
+// Only one sync may run at a time. Before r8 two overlapping runs (save + "online" + app-visible events)
+// could upload the same observation twice; the second upload had lost its photo list and overwrote the first.
+let syncInFlight = null;
+function attemptSync() {
+  if (syncInFlight) return syncInFlight;
+  syncInFlight = attemptSyncInner().finally(() => { syncInFlight = null; });
+  return syncInFlight;
+}
+async function attemptSyncInner() {
   if (!navigator.onLine) return;
   if (!state.msal || !state.msal.getActiveAccount()) return;
   const items = await idbAll("outbox");
@@ -707,14 +715,22 @@ async function attemptSync() {
   updateStatusTile();
 }
 async function syncOne(rec) {
-  // Upload photos into _inbox/attachments/
-  const uploaded = [];
+  // re-read: another tab may have synced this record already
+  const fresh = await idbGet("outbox", rec.id);
+  if (fresh && fresh.status === "synced") return;
+  if (fresh) rec = fresh;
+  // Upload photos into _inbox/attachments/ and remember each upload on the record,
+  // so a retry never sends the observation without the photos that were already uploaded
+  rec.uploadedPhotos ||= [];
   for (const p of rec.photos || []) {
+    if (rec.uploadedPhotos.some(u => u.id === p.id)) continue;
     const stored = await idbGet("photos", p.id);
     if (!stored) continue;
     await uploadFile(`:/_inbox/attachments/${p.name}:/content`, stored.blob, stored.mime);
-    uploaded.push({id:p.id, name:p.name, size: stored.blob.size, mime: p.mime});
+    rec.uploadedPhotos.push({id:p.id, name:p.name, size: stored.blob.size, mime: p.mime});
+    await idbPut("outbox", rec);
   }
+  const uploaded = rec.uploadedPhotos;
   // Build delta json
   const trial = trialById(rec.observation.trialId);
   const delta = {
