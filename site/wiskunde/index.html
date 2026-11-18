@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f6f4ef">
+<title>Math Trainer – Chapter 2</title>
+<style>
+:root{--bg:#f6f4ef;--card:#fff;--ink:#1d2433;--mute:#6b7280;--line:#e6e1d6;--accent:#2f6fde;--ok:#1f9d55;--okbg:#e7f6ed;--bad:#d64545;--badbg:#fdecec;--fig:#fbeec7}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);-webkit-tap-highlight-color:transparent;font-size:17px;line-height:1.45}
+header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 16px}
+.hrow{display:flex;align-items:center;gap:10px;max-width:640px;margin:0 auto}
+.title{font-weight:700;font-size:16px;flex:1}
+.stats{font-size:13px;color:var(--mute);white-space:nowrap}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:8px 12px;font:inherit;font-size:14px;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.btn:disabled{opacity:.5}
+main{max-width:640px;margin:0 auto;padding:14px 14px 40px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.chip{display:inline-block;font-size:12px;font-weight:600;color:var(--accent);background:#eaf1fd;border-radius:999px;padding:3px 10px;margin-bottom:10px}
+.chip.retry{color:#9a5b00;background:#fff3dc}
+.prompt{font-size:18px;font-weight:600;margin:0 0 12px}
+.fig{width:100%;height:auto;max-height:360px;display:block;margin:4px 0 12px;background:#fffdf7;border:1px solid var(--line);border-radius:12px;overflow:hidden;touch-action:manipulation}
+.fig.tap{cursor:crosshair}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:12px 14px;font:inherit;font-size:16px;color:var(--ink);cursor:pointer}
+.opt.right{border-color:var(--ok);background:var(--okbg)}
+.opt.wrong{border-color:var(--bad);background:var(--badbg)}
+.numrow{display:flex;gap:8px;align-items:center}
+.numrow input{flex:1;min-width:0;font:inherit;font-size:20px;padding:10px 12px;border:1.5px solid var(--line);border-radius:12px}
+.numrow .unit{color:var(--mute);font-size:16px}
+.fb{margin-top:14px;border-radius:12px;padding:12px 14px;font-size:15.5px;display:none}
+.fb.ok{display:block;background:var(--okbg);border:1px solid #bfe5cc}
+.fb.bad{display:block;background:var(--badbg);border:1px solid #f3c4c4}
+.fb b.v{display:block;font-size:16px;margin-bottom:4px}
+.next{margin-top:14px;width:100%;padding:13px;font-size:16px;display:none}
+.hint{font-size:14px;color:var(--mute);margin:-4px 0 10px}
+.panel{display:none;margin-top:14px}
+.panel.open{display:block}
+.sk{display:grid;grid-template-columns:1fr 64px;gap:4px 10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+.sk:last-child{border-bottom:0}
+.bar{grid-column:1 / -1;height:7px;background:#eee9de;border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:4px}
+.pct{text-align:right;font-variant-numeric:tabular-nums;color:var(--mute);font-size:13px}
+.sel{width:100%;font:inherit;font-size:15px;padding:10px;border-radius:10px;border:1px solid var(--line);background:#fff;margin:6px 0 12px}
+.small{font-size:13px;color:var(--mute)}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+h3{margin:0 0 6px;font-size:16px}
+</style>
+</head>
+<body>
+<header><div class="hrow">
+  <div class="title">Math Trainer · Ch. 2</div>
+  <div class="stats" id="stats">0/0</div>
+  <button class="btn" id="progBtn">Progress</button>
+</div></header>
+<main>
+  <section class="card panel" id="panel">
+    <h3>Practice</h3>
+    <select class="sel" id="topic"></select>
+    <h3>Mastery per topic</h3>
+    <div class="small" style="margin-bottom:6px">Topics with lower mastery come up more often. Mistakes are asked again a few questions later.</div>
+    <div id="skills"></div>
+    <div class="row">
+      <button class="btn" id="closePanel">Back to questions</button>
+      <button class="btn" id="resetBtn">Reset progress</button>
+    </div>
+  </section>
+  <section class="card" id="qcard" style="margin-top:14px">
+    <span class="chip" id="chip"></span>
+    <p class="prompt" id="prompt"></p>
+    <div id="figwrap"></div>
+    <div id="answer"></div>
+    <div class="fb" id="fb"></div>
+    <button class="btn primary next" id="nextBtn">Next question</button>
+  </section>
+</main>
+<script>
+/* ---------- helpers ---------- */
+const R=(a,b)=>a+Math.random()*(b-a);
+const RI=(a,b)=>Math.floor(R(a,b+1));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const fmt=n=>{const r=Math.round(n*100)/100;return String(r).replace('.',',')};
+const P=(x,y)=>({x,y});
+const add=(p,q)=>P(p.x+q.x,p.y+q.y), sub=(p,q)=>P(p.x-q.x,p.y-q.y), mul=(p,k)=>P(p.x*k,p.y*k);
+const len=p=>Math.hypot(p.x,p.y), dist=(p,q)=>len(sub(p,q)), mid=(p,q)=>P((p.x+q.x)/2,(p.y+q.y)/2);
+const norm=p=>{const l=len(p)||1;return P(p.x/l,p.y/l)}, perp=p=>P(-p.y,p.x);
+const dot=(p,q)=>p.x*q.x+p.y*q.y;
+const angleAt=(A,B,C)=>Math.acos(Math.max(-1,Math.min(1,dot(sub(B,A),sub(C,A))/(dist(A,B)*dist(A,C)))));
+function circumcenter(A,B,C){const d=2*(A.x*(B.y-C.y)+B.x*(C.y-A.y)+C.x*(A.y-B.y));const a2=A.x*A.x+A.y*A.y,b2=B.x*B.x+B.y*B.y,c2=C.x*C.x+C.y*C.y;return P((a2*(B.y-C.y)+b2*(C.y-A.y)+c2*(A.y-B.y))/d,(a2*(C.x-B.x)+b2*(A.x-C.x)+c2*(B.x-A.x))/d)}
+function incenter(A,B,C){const a=dist(B,C),b=dist(A,C),c=dist(A,B),s=a+b+c;return P((a*A.x+b*B.x+c*C.x)/s,(a*A.y+b*B.y+c*C.y)/s)}
+const centroid=(A,B,C)=>P((A.x+B.x+C.x)/3,(A.y+B.y+C.y)/3);
+function orthocenter(A,B,C){const O=circumcenter(A,B,C);return sub(add(add(A,B),C),mul(O,2))}
+function foot(p,a,b){const d=sub(b,a);const t=dot(sub(p,a),d)/dot(d,d);return add(a,mul(d,t))}
+function inradius(A,B,C){const a=dist(B,C),b=dist(A,C),c=dist(A,B),s=(a+b+c)/2;return Math.sqrt(s*(s-a)*(s-b)*(s-c))/s}
+
+function randTri(kind){
+  for(let i=0;i<2000;i++){
+    const A=P(R(0,10),R(0,8)),B=P(R(0,10),R(0,8)),C=P(R(0,10),R(0,8));
+    const s=[dist(B,C),dist(A,C),dist(A,B)];
+    if(Math.min(...s)<3.2)continue;
+    const an=[angleAt(A,B,C),angleAt(B,A,C),angleAt(C,A,B)];
+    const mn=Math.min(...an),mx=Math.max(...an);
+    if(mn<0.45)continue;
+    const ss=s.slice().sort((a,b)=>a-b);
+    if(ss[1]-ss[0]<0.7||ss[2]-ss[1]<0.7)continue; // not isosceles
+    if(kind==='acute'&&mx>1.45)continue;
+    if(kind==='obtuse'&&(mx<1.78||mx>2.15))continue;
+    return [A,B,C];
+  }
+  return [P(1,7),P(9,7),P(4,1)];
+}
+
+/* ---------- SVG figure builder ---------- */
+class Fig{
+  constructor(pts,pad=0.16){
+    const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
+    const minx=Math.min(...xs),maxx=Math.max(...xs),miny=Math.min(...ys),maxy=Math.max(...ys);
+    const size=Math.max(maxx-minx,maxy-miny,1);
+    const pd=size*pad;
+    this.vb=[minx-pd,miny-pd,maxx-minx+2*pd,maxy-miny+2*pd];
+    this.u=size/100;this.parts=[];this.cls='';
+  }
+  line(p,q,c='#1d2433',w=2,dash=false){this.parts.push(`<line x1="${p.x}" y1="${p.y}" x2="${q.x}" y2="${q.y}" stroke="${c}" stroke-width="${w}" vector-effect="non-scaling-stroke" stroke-linecap="round"${dash?' stroke-dasharray="6 5"':''}/>`);return this}
+  inf(p,dir,c,w=2,dash=false){const d=mul(norm(dir),this.u*1000);return this.line(sub(p,d),add(p,d),c,w,dash)}
+  poly(pts,fill='var(--fig)',c='#1d2433'){this.parts.push(`<polygon points="${pts.map(p=>p.x+','+p.y).join(' ')}" fill="${fill}" stroke="${c}" stroke-width="2.2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>`);return this}
+  circle(cn,r,c='#2f6fde',w=2){this.parts.push(`<circle cx="${cn.x}" cy="${cn.y}" r="${r}" fill="none" stroke="${c}" stroke-width="${w}" vector-effect="non-scaling-stroke"/>`);return this}
+  dot(p,c='#1d2433',r=1.6){this.parts.push(`<circle cx="${p.x}" cy="${p.y}" r="${this.u*r}" fill="${c}"/>`);return this}
+  text(p,s,{c='#1d2433',size=5.6,anchor='middle',bold=false}={}){this.parts.push(`<text x="${p.x}" y="${p.y}" font-size="${this.u*size}" fill="${c}" text-anchor="${anchor}" dominant-baseline="central" font-family="system-ui,sans-serif" ${bold?'font-weight="700"':''} stroke="#fffdf7" stroke-width="${this.u*1.4}" paint-order="stroke">${s}</text>`);return this}
+  ra(at,d1,d2,c='#1d2433'){const s=this.u*4.2,a=add(at,mul(norm(d1),s)),b=add(at,mul(norm(d2),s)),m=add(a,mul(norm(d2),s));this.parts.push(`<polyline points="${a.x},${a.y} ${m.x},${m.y} ${b.x},${b.y}" fill="none" stroke="${c}" stroke-width="1.6" vector-effect="non-scaling-stroke"/>`);return this}
+  ticks(p,q,n=1,c='#1d2433'){const m=mid(p,q),d=norm(sub(q,p)),nn=perp(d),L=this.u*2.8,g=this.u*1.6;for(let i=0;i<n;i++){const o=add(m,mul(d,(i-(n-1)/2)*g));this.line(sub(o,mul(nn,L)),add(o,mul(nn,L)),c,1.6)}return this}
+  arc(V,p1,p2,r,c='#d64545'){const a1=Math.atan2(p1.y-V.y,p1.x-V.x),a2=Math.atan2(p2.y-V.y,p2.x-V.x);let da=a2-a1;while(da>Math.PI)da-=2*Math.PI;while(da<-Math.PI)da+=2*Math.PI;const s=add(V,P(Math.cos(a1)*r,Math.sin(a1)*r)),e=add(V,P(Math.cos(a1+da)*r,Math.sin(a1+da)*r));this.parts.push(`<path d="M${s.x} ${s.y} A${r} ${r} 0 0 ${da>0?1:0} ${e.x} ${e.y}" fill="none" stroke="${c}" stroke-width="1.8" vector-effect="non-scaling-stroke"/>`);return this}
+  vlabel(V,G,s){return this.text(add(V,mul(norm(sub(V,G)),this.u*6)),s,{bold:true})}
+  sideLabel(p,q,inside,s,opt={}){const m=mid(p,q);let n=norm(perp(sub(q,p)));if(dot(n,sub(inside,m))>0)n=mul(n,-1);return this.text(add(m,mul(n,this.u*5.5)),s,{c:'#c2410c',...opt})}
+  svg(extra=''){return `<svg class="fig ${this.cls}" viewBox="${this.vb.join(' ')}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">${this.parts.join('')}${extra}</svg>`}
+}
+
+/* ---------- skills ---------- */
+const SKILLS=[
+ {id:'mll',name:'Middelloodlijn & omgeschreven cirkel'},
+ {id:'bis',name:'Bissectrice & ingeschreven cirkel'},
+ {id:'zh',name:'Zwaartelijn & hoogtelijn'},
+ {id:'kleur',name:'Afstanden & kleurvragen'},
+ {id:'herken',name:'Lijnen herkennen in een figuur'},
+ {id:'tap',name:'Snijpunten aanwijzen'},
+ {id:'theorie',name:'Formules & begrippen oppervlakte'},
+ {id:'optri',name:'Oppervlakte driehoek'},
+ {id:'oppar',name:'Oppervlakte parallellogram'},
+ {id:'optrap',name:'Oppervlakte trapezium'},
+ {id:'terug',name:'Hoogte terugrekenen'},
+ {id:'coord',name:'Oppervlakte met coördinaten'},
+ {id:'samen',name:'Samengestelde figuren'},
+];
+const SK=Object.fromEntries(SKILLS.map(s=>[s.id,s]));
+
+/* ---------- concept bank: [vraag, goed, fout, fout, fout, uitleg] ---------- */
+const BANK={
+mll:[
+["Een middelloodlijn van lijnstuk AB…","gaat door het midden van AB en staat er loodrecht op","gaat door punt A en staat loodrecht op AB","gaat door het midden van AB en door een hoekpunt","deelt de hoek bij A middendoor","Middel = door het midden, lood = loodrecht. Allebei moeten kloppen."],
+["Elk punt op de middelloodlijn van AB ligt…","even ver van A als van B","even ver van beide benen van een hoek","precies in het midden van AB","altijd dichter bij A dan bij B","Dat is dé eigenschap van de middelloodlijn: elk punt erop ligt even ver van A en van B."],
+["Je zoekt alle punten die even ver van A als van B liggen. Wat teken je?","de middelloodlijn van AB","de bissectrice van ∠A","een cirkel om A","een lijn evenwijdig aan AB","Even ver van twee púnten → middelloodlijn."],
+["De omgeschreven cirkel van een driehoek…","gaat door alle drie de hoekpunten","raakt alle drie de zijden","gaat door de middens van de zijden","ligt altijd helemaal binnen de driehoek","Omgeschreven = er omheen, door de hoekpunten. Raken aan de zijden doet de ingeschreven cirkel."],
+["Het middelpunt van de omgeschreven cirkel is het snijpunt van de…","middelloodlijnen","bissectrices","zwaartelijnen","hoogtelijnen","Het middelpunt ligt even ver van alle hoekpunten, dus op alle middelloodlijnen."],
+["Hoeveel middelloodlijnen moet je minstens tekenen om het middelpunt van de omgeschreven cirkel te vinden?","2","1","3","4","Twee middelloodlijnen snijden elkaar al in het middelpunt; de derde gaat daar vanzelf doorheen."],
+["Hoe vind je de straal van de omgeschreven cirkel?","meet van het middelpunt naar een hoekpunt","meet van het middelpunt loodrecht naar een zijde","meet de langste zijde","meet van het middelpunt naar het midden van een zijde","De cirkel gaat door de hoekpunten, dus straal = afstand middelpunt → hoekpunt."],
+["Welke tekens zet je bij een middelloodlijn?","streepjes voor gelijke lengte en een rechte-hoekteken","boogjes voor gelijke hoeken","alleen een pijltje","de letter M bij elk hoekpunt","Gelijke stukken (AM = BM) en loodrecht (rechte hoek)."],
+["Bij een stomphoekige driehoek ligt het middelpunt van de omgeschreven cirkel…","buiten de driehoek","altijd binnen de driehoek","op een hoekpunt","precies in het zwaartepunt","Bij een stompe hoek snijden de middelloodlijnen elkaar buiten de driehoek."]
+],
+bis:[
+["De bissectrice van een hoek…","deelt de hoek precies middendoor","staat loodrecht op een been","gaat door het midden van de overstaande zijde","staat loodrecht op de overstaande zijde","Bissectrice = deellijn: twee gelijke halve hoeken."],
+["Elk punt op de bissectrice van ∠A ligt…","even ver van beide benen van ∠A","even ver van de punten B en C","even ver van A als van het midden","altijd binnen de ingeschreven cirkel","De afstand tot een been meet je loodrecht; die is aan beide kanten gelijk."],
+["Een ander woord voor bissectrice is…","deellijn","zwaartelijn","loodlijn","middellijn","Bissectrice of deellijn: hij deelt de hoek."],
+["De ingeschreven cirkel van een driehoek…","raakt alle drie de zijden","gaat door alle drie de hoekpunten","gaat door het zwaartepunt","ligt deels buiten de driehoek","Ingeschreven = erin, raakt de drie zijden."],
+["Het middelpunt van de ingeschreven cirkel is het snijpunt van de…","bissectrices","middelloodlijnen","zwaartelijnen","hoogtelijnen","Het middelpunt ligt even ver van alle zijden, dus op alle bissectrices."],
+["Hoe vind je de straal van de ingeschreven cirkel?","teken vanuit het middelpunt een lijnstuk loodrecht op een zijde en meet dat","meet van het middelpunt naar een hoekpunt","neem de helft van de kortste zijde","meet van het middelpunt naar het zwaartepunt","De cirkel raakt de zijde; de straal staat daar loodrecht op."],
+["Hoeveel bissectrices heb je minstens nodig voor het middelpunt van de ingeschreven cirkel?","2","1","3","4","Het snijpunt van twee bissectrices is al het middelpunt."],
+["Waar ligt het middelpunt van de ingeschreven cirkel?","altijd binnen de driehoek","bij een stomphoekige driehoek buiten de driehoek","altijd op een zijde","op een hoekpunt","De cirkel zit ín de driehoek, dus het middelpunt ook — ook bij een stomphoekige driehoek."]
+],
+zh:[
+["Een zwaartelijn van een driehoek…","gaat door een hoekpunt en het midden van de overstaande zijde","gaat door een hoekpunt en staat loodrecht op de overstaande zijde","deelt een hoek middendoor","gaat door het midden van een zijde en staat er loodrecht op","Zwaartelijn: hoekpunt → midden van de overstaande zijde."],
+["Een hoogtelijn van een driehoek…","gaat door een hoekpunt en staat loodrecht op de overstaande zijde","gaat door een hoekpunt en het midden van de overstaande zijde","deelt een hoek middendoor","gaat door het midden van een zijde en staat er loodrecht op","Hoogtelijn: door een hoekpunt, loodrecht op de overstaande zijde."],
+["De drie zwaartelijnen snijden elkaar in het…","zwaartepunt","hoogtepunt","middelpunt van de omgeschreven cirkel","middelpunt van de ingeschreven cirkel","Zwaartelijnen → zwaartepunt Z."],
+["De drie hoogtelijnen snijden elkaar in het…","hoogtepunt","zwaartepunt","middelpunt van de omgeschreven cirkel","middelpunt van de ingeschreven cirkel","Hoogtelijnen → hoogtepunt H."],
+["Waar ligt het hoogtepunt van een stomphoekige driehoek?","buiten de driehoek","binnen de driehoek","op het midden van de langste zijde","op het hoekpunt met de stompe hoek","Bij een stompe hoek vallen twee hoogtelijnen buiten de driehoek, dus ze snijden elkaar buiten."],
+["Waar ligt het hoogtepunt van een rechthoekige driehoek?","op het hoekpunt met de rechte hoek","buiten de driehoek","midden in de driehoek","op het midden van de schuine zijde","De twee rechthoekszijden zijn zelf al hoogtelijnen; ze snijden elkaar in de rechte hoek."],
+["Waar ligt het hoogtepunt van een scherphoekige driehoek?","binnen de driehoek","buiten de driehoek","op een hoekpunt","op een zijde","Alle hoeken zijn kleiner dan 90°, dan vallen alle hoogtelijnen binnen de driehoek."],
+["Wat moet je vaak doen om in een stomphoekige driehoek een hoogtelijn te tekenen?","de overstaande zijde verlengen","de hoek middendoor delen","het midden van de zijde opmeten","een cirkel om de driehoek tekenen","De hoogtelijn valt buiten de driehoek, dus je tekent hem loodrecht op het verlengde van de zijde."],
+["Een zwaartelijn verdeelt een driehoek in twee stukken die…","even groot (even zwaar) zijn","altijd rechthoekig zijn","even lange zijden hebben","precies gelijk van vorm zijn","Daarom heet hij zwaartelijn: twee even zware stukken."],
+["Een stomphoekige driehoek heeft…","één hoek groter dan 90°","drie hoeken kleiner dan 90°","één hoek van precies 90°","twee hoeken groter dan 90°","Stomp = groter dan 90°. Een driehoek kan er maar één hebben."]
+],
+kleur:[
+["Alle punten op afstand 3 cm van punt A vormen…","de cirkel ⊙(A, 3 cm)","twee lijnen evenwijdig aan A","de middelloodlijn door A","een vierkant om A","Vaste afstand tot een púnt → een cirkel."],
+["Alle punten op afstand 1 cm van lijn l vormen…","twee lijnen evenwijdig aan l, op 1 cm afstand","één lijn evenwijdig aan l","een cirkel met straal 1 cm","de middelloodlijn van l","Vaste afstand tot een lijn → aan beide kanten een evenwijdige lijn."],
+["Alle punten binnen ∠C die even ver van de benen liggen, vormen…","de bissectrice van ∠C","een middelloodlijn","de hoogtelijn uit C","de zwaartelijn uit C","Even ver van twee benen → bissectrice."],
+["Alle punten op minder dan 2 cm van punt C liggen…","in het binnengebied van ⊙(C, 2 cm)","op ⊙(C, 2 cm)","in het buitengebied van ⊙(C, 2 cm)","op de middelloodlijn","Minder dan de straal → binnen de cirkel."],
+["Alle punten op meer dan 4 cm van punt B liggen…","in het buitengebied van ⊙(B, 4 cm)","in het binnengebied van ⊙(B, 4 cm)","op ⊙(B, 4 cm)","op een lijn door B","Meer dan de straal → buiten de cirkel."],
+["Kleur de punten die even ver van A als van B liggen én op minder dan 2 cm van C. Wat kleur je?","het stuk van de middelloodlijn van AB binnen ⊙(C, 2 cm)","het stuk van de middelloodlijn van AB buiten ⊙(C, 2 cm)","de hele cirkel ⊙(C, 2 cm)","de bissectrice van ∠C","Combineer: middelloodlijn (even ver van A en B) en binnengebied van de cirkel (minder dan 2 cm)."],
+["Kleur de punten die even ver van A als van B liggen én verder dan 2 cm van C. Wat kleur je?","het stuk van de middelloodlijn van AB buiten ⊙(C, 2 cm)","het stuk van de middelloodlijn van AB binnen ⊙(C, 2 cm)","alles buiten ⊙(C, 2 cm)","lijnstuk AB","Middelloodlijn (even ver van A en B), maar alleen het deel in het buitengebied van de cirkel."],
+["De afstand van een punt tot een lijn meet je…","loodrecht op de lijn (de kortste afstand)","schuin naar het dichtstbijzijnde hoekpunt","langs de lijn","altijd horizontaal","Afstand = kortste weg = loodrecht."],
+["Twee dorpen A en B willen een school die even ver van beide dorpen ligt. Waar kan de school staan?","ergens op de middelloodlijn van AB","alleen op de bissectrice van een hoek","precies in A","op lijnstuk AB, dicht bij A","Even ver van twee punten → elk punt op de middelloodlijn is goed."]
+],
+theorie:[
+["Formule voor de oppervlakte van een driehoek:","½ × zijde × bijbehorende hoogte","zijde × bijbehorende hoogte","½ × (som van twee zijden) × hoogte","zijde × zijde","Een driehoek is de helft van een rechthoek met dezelfde zijde en hoogte."],
+["Formule voor de oppervlakte van een parallellogram:","zijde × bijbehorende hoogte","½ × zijde × bijbehorende hoogte","zijde × schuine zijde","½ × (som van de zijden) × hoogte","Geen ½: een parallellogram bestaat uit twee gelijke driehoeken."],
+["Formule voor de oppervlakte van een trapezium:","½ × (som van de evenwijdige zijden) × hoogte","zijde × hoogte","½ × zijde × hoogte","(som van alle zijden) × hoogte","Twee trapeziums samen vormen een parallellogram met zijde (a + c)."],
+["Hoe staan een zijde en de bijbehorende hoogte ten opzichte van elkaar?","loodrecht","evenwijdig","onder 45°","dat maakt niet uit","De hoogte staat altijd loodrecht op de zijde."],
+["Een trapezium is een vierhoek met…","één paar evenwijdige zijden","geen evenwijdige zijden","vier gelijke zijden","vier rechte hoeken","Eén paar evenwijdige zijden is genoeg."],
+["Een parallellogram is een vierhoek met…","overstaande zijden die evenwijdig en even lang zijn","maar één paar evenwijdige zijden","vier hoeken van 90°","geen evenwijdige zijden","Beide paren overstaande zijden zijn evenwijdig en even lang."],
+["Waarom staat er ½ in de formule voor een driehoek?","een driehoek is de helft van een rechthoek met dezelfde zijde en hoogte","omdat een driehoek drie zijden heeft","omdat de hoogte de helft van de zijde is","dat is gewoon een afspraak","Twee keer de driehoek past precies in die rechthoek."],
+["De maten zijn in cm. In welke eenheid schrijf je de oppervlakte?","cm²","cm","cm³","m","Oppervlakte = lengte × lengte → cm²."],
+["Wat betekent 'stukje toevoegen' bij een samengestelde figuur?","maak er een grotere rechthoek van en trek het extra stuk weer af","tel er een willekeurig stuk bij op","verdubbel de figuur","meet de figuur opnieuw op","Opp. = grote rechthoek − het stukje dat je erbij bedacht."],
+["Bij een stomphoekige driehoek ligt de hoogte buiten de driehoek. Welke zijde gebruik je in de formule?","de echte zijde (zonder het verlengde stuk)","de zijde plus het verlengde stuk","alleen het verlengde stuk","de langste zijde","Het verlengde is alleen een hulplijn om de hoogte te kunnen tekenen."]
+]};
+
+function genBank(skill){
+  const bank=BANK[skill];
+  let q,tries=0;
+  do{q=pick(bank);tries++}while(recent.includes(skill+q[0])&&tries<20);
+  const opts=shuffle(q.slice(1,5).map((t,i)=>({t,ok:i===0})));
+  return {skill,key:skill+q[0],type:'mc',prompt:q[0],options:opts.map(o=>o.t),answerIndex:opts.findIndex(o=>o.ok),explain:q[5]};
+}
+
+/* ---------- recognise a line ---------- */
+function genHerken(){
+  const [A,B,C]=randTri('acute');const G=centroid(A,B,C);
+  const f=new Fig([A,B,C]);f.poly([A,B,C]);
+  const kind=pick(['zwaartelijn','hoogtelijn','middelloodlijn','bissectrice']);
+  const red='#d64545';
+  if(kind==='zwaartelijn'){const M=mid(B,C);f.line(A,M,red,2.4);f.ticks(B,M,1);f.ticks(M,C,1);f.dot(M,red)}
+  if(kind==='hoogtelijn'){const F=foot(A,B,C);f.line(A,F,red,2.4);f.ra(F,sub(A,F),sub(dist(F,B)>dist(F,C)?B:C,F))}
+  if(kind==='middelloodlijn'){const M=mid(B,C);f.inf(M,perp(sub(C,B)),red,2.4);f.ticks(B,M,2);f.ticks(M,C,2);f.ra(M,perp(sub(C,B)),sub(C,M))}
+  if(kind==='bissectrice'){const c=dist(A,B),b=dist(A,C);const D=add(B,mul(sub(C,B),c/(b+c)));const E=add(A,mul(sub(D,A),1.15));f.line(A,E,red,2.4);const r=f.u*9;f.arc(A,B,D,r);f.arc(A,D,C,r);const h1=norm(add(norm(sub(B,A)),norm(sub(D,A)))),h2=norm(add(norm(sub(D,A)),norm(sub(C,A))));f.dot(add(A,mul(h1,r*0.62)),red,1.3);f.dot(add(A,mul(h2,r*0.62)),red,1.3)}
+  f.vlabel(A,G,'A');f.vlabel(B,G,'B');f.vlabel(C,G,'C');
+  const names=['zwaartelijn','hoogtelijn','middelloodlijn','bissectrice'];
+  const ex={
+    zwaartelijn:'Rode lijn gaat van A naar het <b>midden</b> van BC (gelijke streepjes), zonder rechte hoek. Dat is een zwaartelijn.',
+    hoogtelijn:'Rode lijn gaat door A en staat <b>loodrecht</b> op BC (rechte-hoekteken), maar niet naar het midden. Dat is een hoogtelijn.',
+    middelloodlijn:'Rode lijn gaat door het <b>midden</b> van BC (gelijke streepjes) én staat er <b>loodrecht</b> op, en gaat niet door A. Dat is de middelloodlijn van BC.',
+    bissectrice:'Rode lijn deelt de hoek bij A in <b>twee gelijke hoeken</b> (boogjes). Dat is de bissectrice van ∠A.'
+  };
+  const opts=shuffle(names);
+  return {skill:'herken',key:'herken'+kind+Math.random(),type:'mc',prompt:'Welke lijn is in het rood getekend?',svg:f.svg(),options:opts.map(n=>n[0].toUpperCase()+n.slice(1)),answerIndex:opts.indexOf(kind),explain:ex[kind]+' Let altijd op de tekens: streepjes = gelijke lengte, hoekje = loodrecht, boogjes = gelijke hoeken.'};
+}
+
+/* ---------- tap the special point ---------- */
+const TAPS={
+  O:{name:'het middelpunt van de omgeschreven cirkel',how:'Snijpunt van de <b>middelloodlijnen</b>. De cirkel gaat door de drie hoekpunten.'},
+  I:{name:'het middelpunt van de ingeschreven cirkel',how:'Snijpunt van de <b>bissectrices</b>. De cirkel raakt de drie zijden.'},
+  Z:{name:'het zwaartepunt',how:'Snijpunt van de <b>zwaartelijnen</b> (van elk hoekpunt naar het midden van de overstaande zijde).'},
+  H:{name:'het hoogtepunt',how:'Snijpunt van de <b>hoogtelijnen</b> (door elk hoekpunt loodrecht op de overstaande zijde).'}
+};
+function genTap(){
+  const t=pick(['O','I','Z','H','O','H']);
+  let A,B,C,pts,tries=0;
+  do{
+    const kind=(t==='O'||t==='H')&&Math.random()<0.4?'obtuse':'acute';
+    [A,B,C]=randTri(kind);
+    pts=[A,B,C,circumcenter(A,B,C),incenter(A,B,C),centroid(A,B,C),orthocenter(A,B,C)];
+    const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
+    var span=Math.max(Math.max(...xs)-Math.min(...xs),Math.max(...ys)-Math.min(...ys));
+    var tsize=Math.max(dist(A,B),dist(B,C),dist(A,C));
+    tries++;
+  }while(span>tsize*1.9&&tries<60);
+  const G=centroid(A,B,C);
+  const target={O:circumcenter(A,B,C),I:incenter(A,B,C),Z:G,H:orthocenter(A,B,C)}[t];
+  const f=new Fig(pts,0.12);f.cls='tap';f.poly([A,B,C]);
+  f.vlabel(A,G,'A');f.vlabel(B,G,'B');f.vlabel(C,G,'C');
+  const tol=Math.max(tsize*0.07,f.u*5);
+  const obtuse=Math.max(angleAt(A,B,C),angleAt(B,A,C),angleAt(C,A,B))>Math.PI/2;
+  return {skill:'tap',key:'tap'+Math.random(),type:'tap',prompt:`Tik in de figuur op ${TAPS[t].name}.`,hint:'Stel je de lijnen voor die je zou tekenen. Het punt kan ook buiten de driehoek liggen.',fig:f,svg:f.svg(),target,tol,
+    reveal(fig){
+      const V=[A,B,C],red='#d64545';
+      if(t==='O'){for(let i=0;i<3;i++){const p=V[i],q=V[(i+1)%3],M=mid(p,q);fig.inf(M,perp(sub(q,p)),red,1.6);fig.ticks(p,M,1,red);fig.ticks(M,q,1,red)}fig.circle(target,dist(target,A))}
+      if(t==='I'){for(let i=0;i<3;i++){const p=V[i],q=V[(i+1)%3],r=V[(i+2)%3];const c=dist(p,q),b=dist(p,r);const D=add(q,mul(sub(r,q),c/(b+c)));fig.line(p,D,red,1.6)}fig.circle(target,inradius(A,B,C));const F=foot(target,A,B);fig.line(target,F,'#2f6fde',1.6,true)}
+      if(t==='Z'){for(let i=0;i<3;i++){const p=V[i],q=V[(i+1)%3],r=V[(i+2)%3];const M=mid(q,r);fig.line(p,M,red,1.6);fig.ticks(q,M,i+1,red);fig.ticks(M,r,i+1,red)}}
+      if(t==='H'){for(let i=0;i<3;i++){const p=V[i],q=V[(i+1)%3],r=V[(i+2)%3];fig.inf(q,sub(r,q),'#9ca3af',1.2,true);fig.inf(p,perp(sub(r,q)),red,1.6)}}
+    },
+    explain:TAPS[t].how+(obtuse&&(t==='O'||t==='H')?' Deze driehoek is <b>stomphoekig</b>, daarom ligt het punt buiten de driehoek.':'')+' Groen = juiste punt, blauw = jouw tik.'};
+}
+
+/* ---------- area: triangle ---------- */
+function units(){
+  const r=Math.random();
+  if(r<0.25)return {u:'mm',b:RI(20,80),h:RI(15,60),e:()=>RI(8,25)};
+  if(r<0.5)return {u:'cm',b:RI(20,90)/10,h:RI(15,70)/10,e:()=>RI(8,25)/10};
+  return {u:'cm',b:RI(4,14),h:RI(3,11),e:()=>RI(2,5)};
+}
+function genOpTri(){
+  const U=units(),b=U.b,h=U.h,obtuse=Math.random()<0.4,flip=Math.random()<0.5;
+  let ax,ext=0;
+  if(obtuse){ext=U.e();ax=b+ext}else{ax=b*R(0.22,0.78)}
+  let A=P(0,0),B=P(b,0),C=P(ax,-h),F=P(ax,0);
+  if(flip){[A,B,C,F]=[A,B,C,F].map(p=>P(b-p.x,p.y))}
+  const f=new Fig([A,B,C,F]);const G=centroid(A,B,C);
+  if(obtuse)f.line(flip?A:B,F,'#6b7280',1.6,true);
+  f.poly([A,B,C]);
+  f.line(C,F,'#2f6fde',2,true);f.ra(F,sub(C,F),sub(mid(A,B),F),'#2f6fde');
+  f.vlabel(A,G,'A');f.vlabel(B,G,'B');f.vlabel(C,G,'C');
+  f.text(add(mid(A,B),P(0,f.u*7)),fmt(b),{c:'#c2410c'});
+  f.text(add(mid(C,F),P((flip?-1:1)*(obtuse?1:-1)*f.u*6,0)),fmt(h),{c:'#2f6fde'});
+  let extra='';
+  if(obtuse){const E0=flip?A:B;f.text(add(mid(E0,F),P(0,f.u*7)),fmt(ext),{c:'#6b7280'});extra=` Het verlengde stuk (${fmt(ext)}) is alleen een hulplijn: dat tel je <b>niet</b> mee.`}
+  else{const s=Math.round(dist(A,C)*10)/10;f.sideLabel(A,C,G,fmt(s));extra=` De schuine zijde AC (${fmt(s)}) heb je niet nodig.`}
+  const ans=b*h/2;
+  return {skill:'optri',key:'optri'+Math.random(),type:'num',prompt:`Bereken de oppervlakte van △ABC. De maten zijn in ${U.u}.`,svg:f.svg(),answer:ans,unit:U.u+'²',
+    explain:`De hoogte ${fmt(h)} hoort bij zijde AB = ${fmt(b)} (ze staan loodrecht op elkaar).<br>Opp. = ½ × ${fmt(b)} × ${fmt(h)} = <b>${fmt(ans)} ${U.u}²</b>.${extra}`};
+}
+function genOpPar(){
+  const U=units(),b=U.b,h=U.h,s=b*R(0.2,0.5);
+  const A=P(0,0),B=P(b,0),C=P(b+s,-h),D=P(s,-h),F=P(s,0);
+  const f=new Fig([A,B,C,D]);const G=mid(A,C);
+  f.poly([A,B,C,D]);f.line(D,F,'#2f6fde',2,true);f.ra(F,sub(D,F),sub(B,F),'#2f6fde');
+  ['A','B','C','D'].forEach((n,i)=>f.vlabel([A,B,C,D][i],G,n));
+  f.text(add(mid(A,B),P(0,f.u*7)),fmt(b),{c:'#c2410c'});
+  f.text(add(mid(D,F),P(f.u*6,0)),fmt(h),{c:'#2f6fde'});
+  const sl=Math.round(dist(A,D)*10)/10;f.sideLabel(A,D,G,fmt(sl));
+  const ans=b*h;
+  return {skill:'oppar',key:'oppar'+Math.random(),type:'num',prompt:`Bereken de oppervlakte van parallellogram ABCD. De maten zijn in ${U.u}.`,svg:f.svg(),answer:ans,unit:U.u+'²',
+    explain:`Opp. parallellogram = zijde × bijbehorende hoogte = ${fmt(b)} × ${fmt(h)} = <b>${fmt(ans)} ${U.u}²</b>.<br>Geen ½! En de schuine zijde (${fmt(sl)}) is <b>niet</b> de hoogte.`};
+}
+function genOpTrap(){
+  const U=units();let a=U.b,h=U.h;let c=Math.round(a*R(0.35,0.7)*(U.u==='mm'?1:10))/(U.u==='mm'?1:10);if(U.b%1===0&&U.u==='cm')c=Math.max(2,Math.round(a*R(0.35,0.7)));
+  const right=Math.random()<0.3;const p=right?0:(a-c)*R(0.2,0.8);
+  const A=P(0,0),B=P(a,0),C=P(p+c,-h),D=P(p,-h),F=P(p,0);
+  const f=new Fig([A,B,C,D]);const G=centroid(A,B,C);
+  f.poly([A,B,C,D]);
+  if(!right){f.line(D,F,'#2f6fde',2,true)}f.ra(F,sub(D,F),sub(B,F),'#2f6fde');
+  ['A','B','C','D'].forEach((n,i)=>f.vlabel([A,B,C,D][i],mid(A,C),n));
+  f.text(add(mid(A,B),P(0,f.u*7)),fmt(a),{c:'#c2410c'});
+  f.text(add(mid(D,C),P(0,-f.u*6)),fmt(c),{c:'#c2410c'});
+  f.text(add(mid(D,F),P(right?-f.u*6:f.u*6,0)),fmt(h),{c:'#2f6fde'});
+  if(!right){const sl=Math.round(dist(B,C)*10)/10;f.sideLabel(B,C,G,fmt(sl))}
+  const ans=(a+c)*h/2;
+  return {skill:'optrap',key:'optrap'+Math.random(),type:'num',prompt:`Bereken de oppervlakte van trapezium ABCD (AB // CD). De maten zijn in ${U.u}.`,svg:f.svg(),answer:ans,unit:U.u+'²',
+    explain:`Opp. trapezium = ½ × (som evenwijdige zijden) × hoogte = ½ × (${fmt(a)} + ${fmt(c)}) × ${fmt(h)} = ½ × ${fmt(a+c)} × ${fmt(h)} = <b>${fmt(ans)} ${U.u}²</b>.`};
+}
+function genTerug(){
+  const v=pick(['tri','par','trap']);
+  if(v==='tri'){const z=RI(4,16),h=RI(3,12),A=z*h/2;return {skill:'terug',key:'terug'+Math.random(),type:'num',prompt:`Een driehoek ABC heeft een oppervlakte van ${fmt(A)} cm². Zijde AB is ${z} cm. Hoe lang is de hoogte die bij AB hoort?`,answer:h,unit:'cm',explain:`½ × ${z} × hoogte = ${fmt(A)}, dus hoogte = 2 × ${fmt(A)} ÷ ${z} = ${fmt(2*A)} ÷ ${z} = <b>${h} cm</b>.`}}
+  if(v==='par'){const z=RI(4,15),h=RI(3,12),A=z*h;return {skill:'terug',key:'terug'+Math.random(),type:'num',prompt:`Een parallellogram heeft een oppervlakte van ${A} cm². Eén zijde is ${z} cm. Hoe lang is de hoogte die bij die zijde hoort?`,answer:h,unit:'cm',explain:`${z} × hoogte = ${A}, dus hoogte = ${A} ÷ ${z} = <b>${h} cm</b>.`}}
+  const a=RI(7,16),c=RI(3,a-2),hh=pick([RI(3,10),RI(6,19)/2]),A=(a+c)*hh/2;
+  return {skill:'terug',key:'terug'+Math.random(),type:'num',prompt:`Van trapezium ABCD is AB // CD, AB = ${a} cm, CD = ${c} cm en de oppervlakte is ${fmt(A)} cm². Bereken de hoogte.`,answer:hh,unit:'cm',explain:`½ × (${a} + ${c}) × hoogte = ${fmt(A)}, dus hoogte = 2 × ${fmt(A)} ÷ ${a+c} = ${fmt(2*A)} ÷ ${a+c} = <b>${fmt(hh)} cm</b>.`};
+}
+function genCoord(){
+  let x1,y1,y2,x3,y3;
+  do{x1=RI(-4,4);y1=RI(-4,4);y2=y1+RI(2,6)*pick([1,-1]);x3=x1+RI(2,7)*pick([1,-1]);y3=RI(-5,5)}while(y2<-5||y2>5||x3<-5||x3>5);
+  const horiz=Math.random()<0.5;
+  let p=[[x1,y1],[x1,y2],[x3,y3]];if(horiz)p=p.map(([x,y])=>[y,x]);
+  const n=shuffle(['P','Q','R']).slice(0,1)[0];const names=['P','Q','R'];
+  const pts=p.map(([x,y])=>P(x,-y));
+  const f=new Fig([P(-6,-6),P(6,6)],0.04);
+  for(let i=-6;i<=6;i++){f.line(P(i,-6),P(i,6),'#e5e1d8',1);f.line(P(-6,i),P(6,i),'#e5e1d8',1)}
+  f.line(P(-6,0),P(6,0),'#9ca3af',1.4);f.line(P(0,-6),P(0,6),'#9ca3af',1.4);
+  f.text(P(5.6,0.45),'x',{c:'#6b7280',size:4.5});f.text(P(0.45,-5.6),'y',{c:'#6b7280',size:4.5});
+  f.poly(pts,'rgba(251,238,199,.85)');const G=centroid(...pts);
+  pts.forEach((q,i)=>{f.dot(q);f.vlabel(q,G,names[i])});
+  const L=Math.abs(y2-y1),H=Math.abs(x3-x1);
+  const ans=L*H/2;
+  const cs=p.map(([x,y],i)=>`${names[i]}(${x}, ${y})`).join(', ');
+  return {skill:'coord',key:'coord'+Math.random(),type:'num',prompt:`Bereken de oppervlakte van △PQR met ${cs}. De roostervierkantjes zijn 1 bij 1 cm.`,svg:f.svg(),answer:ans,unit:'cm²',
+    explain:`PQ loopt ${horiz?'horizontaal (zelfde y)':'verticaal (zelfde x)'}, dus PQ = ${L}. De hoogte bij PQ is de ${horiz?'verticale':'horizontale'} afstand van R tot die lijn = ${H}.<br>Opp. = ½ × ${L} × ${H} = <b>${fmt(ans)} cm²</b>.`};
+}
+function genSamen(){
+  if(Math.random()<0.5){
+    const W=RI(7,12),H=RI(6,10),w=RI(2,W-4),hh=RI(2,H-3);
+    const pts=[P(0,0),P(W,0),P(W,-(H-hh)),P(W-w,-(H-hh)),P(W-w,-H),P(0,-H)];
+    const f=new Fig(pts);f.poly(pts);f.line(P(W-w,-(H-hh)),P(W-w,0),'#9ca3af',1.4,true);
+    f.text(P(W/2,f.u*7),W,{c:'#c2410c'});f.text(P(-f.u*6,-H/2),H,{c:'#c2410c'});
+    f.text(P((W-w)/2,-H-f.u*6),W-w,{c:'#c2410c'});f.text(P(W+f.u*6,-(H-hh)/2),H-hh,{c:'#c2410c'});
+    const ans=W*H-w*hh;
+    return {skill:'samen',key:'samen'+Math.random(),type:'num',prompt:'Bereken de oppervlakte van deze figuur. Alle hoeken zijn recht. De maten zijn in cm.',svg:f.svg(),answer:ans,unit:'cm²',
+      explain:`<b>Stukje toevoegen:</b> grote rechthoek ${W} × ${H} = ${W*H}. Het ontbrekende hoekje is ${W} − ${W-w} = ${w} breed en ${H} − ${H-hh} = ${hh} hoog, dus ${w*hh}.<br>Opp. = ${W*H} − ${w*hh} = <b>${ans} cm²</b>.<br>(Splitsen kan ook: ${W-w} × ${H} + ${w} × ${H-hh} = ${(W-w)*H} + ${w*(H-hh)} = ${ans}.)`};
+  }
+  const W=RI(4,12)*1,H1=RI(3,8),H2=RI(2,6),ax=W*R(0.3,0.7);
+  const pts=[P(0,0),P(W,0),P(W,-H1),P(ax,-H1-H2),P(0,-H1)];
+  const f=new Fig(pts);f.poly(pts);f.line(P(0,-H1),P(W,-H1),'#9ca3af',1.4,true);
+  f.line(P(ax,-H1-H2),P(ax,-H1),'#2f6fde',2,true);f.ra(P(ax,-H1),P(0,-1),P(1,0),'#2f6fde');
+  f.text(P(W/2,f.u*7),W,{c:'#c2410c'});f.text(P(-f.u*6,-H1/2),H1,{c:'#c2410c'});f.text(P(ax+f.u*6,-H1-H2/2),H2,{c:'#2f6fde'});
+  const ans=W*H1+W*H2/2;
+  return {skill:'samen',key:'samen'+Math.random(),type:'num',prompt:'Bereken de oppervlakte van deze figuur (een rechthoek met een driehoek erop). De maten zijn in cm.',svg:f.svg(),answer:ans,unit:'cm²',
+    explain:`<b>Splitsen:</b> rechthoek ${W} × ${H1} = ${W*H1}. Driehoek: zijde ${W}, hoogte ${H2}, dus ½ × ${W} × ${H2} = ${fmt(W*H2/2)}.<br>Opp. = ${W*H1} + ${fmt(W*H2/2)} = <b>${fmt(ans)} cm²</b>.`};
+}
+
+const GEN={mll:()=>genBank('mll'),bis:()=>genBank('bis'),zh:()=>genBank('zh'),kleur:()=>genBank('kleur'),theorie:()=>genBank('theorie'),herken:genHerken,tap:genTap,optri:genOpTri,oppar:genOpPar,optrap:genOpTrap,terug:genTerug,coord:genCoord,samen:genSamen};
+
+/* ---------- adaptive state ---------- */
+const KEY='h2-trainer-v1';
+let state={m:{},n:{},c:{},retry:[],topic:'all'};
+let recent=[],session={n:0,c:0,streak:0},last=null,lastSkills=[];
+function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.m)state=Object.assign(state,s)}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+const mast=id=>state.m[id]??0.3;
+function record(skill,ok){
+  const m=mast(skill);
+  state.m[skill]=ok?m+(1-m)*0.25:m*0.5;
+  state.n[skill]=(state.n[skill]||0)+1;
+  if(ok)state.c[skill]=(state.c[skill]||0)+1;
+  if(!ok)state.retry.push({skill,due:2});
+  save();
+}
+function chooseSkill(){
+  if(state.topic!=='all')return state.topic;
+  state.retry.forEach(r=>r.due--);
+  const i=state.retry.findIndex(r=>r.due<=0);
+  if(i>=0){const s=state.retry.splice(i,1)[0].skill;save();return {skill:s,retry:true}}
+  const w=SKILLS.map(s=>{let x=Math.pow(1-mast(s.id),2)+0.04;if(lastSkills[0]===s.id)x*=0.15;else if(lastSkills[1]===s.id)x*=0.5;return x});
+  let r=Math.random()*w.reduce((a,b)=>a+b,0);
+  for(let k=0;k<SKILLS.length;k++){r-=w[k];if(r<=0)return SKILLS[k].id}
+  return SKILLS[0].id;
+}
+
+/* ---------- UI ---------- */
+function $(id){return document.getElementById(id)}
+let cur=null,answered=false;
+function nextQ(){
+  let ch=chooseSkill(),retry=false;if(typeof ch==='object'){retry=ch.retry;ch=ch.skill}
+  cur=GEN[ch]();cur.retry=retry;answered=false;
+  lastSkills.unshift(ch);lastSkills=lastSkills.slice(0,3);
+  recent.unshift(cur.key);recent=recent.slice(0,10);
+  render();
+}
+function render(){
+  const q=cur;
+  $('chip').textContent=(q.retry?'Again: ':'')+SK[q.skill].name;
+  $('chip').className='chip'+(q.retry?' retry':'');
+  $('prompt').textContent=q.prompt;
+  $('figwrap').innerHTML=(q.hint?`<div class="hint">${q.hint}</div>`:'')+(q.svg||'');
+  $('fb').className='fb';$('fb').innerHTML='';
+  $('nextBtn').style.display='none';
+  const a=$('answer');a.innerHTML='';
+  if(q.type==='mc'){
+    const box=document.createElement('div');box.className='opts';
+    q.options.forEach((t,i)=>{const b=document.createElement('button');b.className='opt';b.textContent=t;b.onclick=()=>gradeMC(i);box.appendChild(b)});
+    a.appendChild(box);
+  }else if(q.type==='num'){
+    a.innerHTML=`<div class="numrow"><input id="num" inputmode="decimal" autocomplete="off" placeholder="Your answer"><span class="unit">${q.unit}</span><button class="btn primary" id="chk">Check</button></div>`;
+    $('chk').onclick=gradeNum;$('num').addEventListener('keydown',e=>{if(e.key==='Enter')gradeNum()});
+  }else if(q.type==='tap'){
+    const svg=$('figwrap').querySelector('svg');
+    svg.addEventListener('click',e=>{if(answered)return;const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const p=pt.matrixTransform(svg.getScreenCTM().inverse());gradeTap(P(p.x,p.y))});
+  }
+  updStats();
+}
+function finish(ok,html){
+  answered=true;record(cur.skill,ok);
+  session.n++;if(ok){session.c++;session.streak++}else session.streak=0;
+  const fb=$('fb');fb.className='fb '+(ok?'ok':'bad');
+  fb.innerHTML=`<b class="v">${ok?pick(['Correct!','Well done!','Right!']):'Not quite.'}</b>${html}`;
+  $('nextBtn').style.display='block';updStats();renderSkills();
+  $('nextBtn').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function gradeMC(i){
+  if(answered)return;const ok=i===cur.answerIndex;
+  const bs=$('answer').querySelectorAll('.opt');bs[cur.answerIndex].classList.add('right');if(!ok)bs[i].classList.add('wrong');
+  finish(ok,cur.explain);
+}
+function gradeNum(){
+  if(answered)return;const raw=$('num').value.trim();if(!raw)return;
+  const v=parseFloat(raw.replace(',','.').replace(/[^0-9.\-]/g,''));
+  if(isNaN(v))return;
+  const ok=Math.abs(v-cur.answer)<=Math.max(0.011,Math.abs(cur.answer)*0.002);
+  $('num').disabled=true;$('chk').disabled=true;
+  finish(ok,(ok?'':`You answered ${fmt(v)}. `)+cur.explain);
+}
+function gradeTap(p){
+  const ok=dist(p,cur.target)<=cur.tol;
+  const f=cur.fig;cur.reveal(f);
+  f.dot(cur.target,'#1f9d55',2.6);
+  const s=f.u*3;f.line(P(p.x-s,p.y-s),P(p.x+s,p.y+s),'#2f6fde',3);f.line(P(p.x-s,p.y+s),P(p.x+s,p.y-s),'#2f6fde',3);
+  f.cls='';$('figwrap').innerHTML=f.svg();
+  finish(ok,cur.explain);
+}
+function updStats(){$('stats').textContent=`${session.c}/${session.n}`+(session.streak>=3?` · 🔥${session.streak}`:'')}
+function color(m){return m>=0.85?'#1f9d55':m>=0.6?'#7cb342':m>=0.4?'#e8a33d':'#d64545'}
+function renderSkills(){
+  $('skills').innerHTML=SKILLS.map(s=>{const m=mast(s.id),n=state.n[s.id]||0,c=state.c[s.id]||0;
+    return `<div class="sk"><div>${s.name}${m>=0.85?' ✓':''}<div class="small">${n?`${c}/${n} correct`:'Not practised yet'}</div></div><div class="pct">${Math.round(m*100)}%</div><div class="bar"><i style="width:${Math.round(m*100)}%;background:${color(m)}"></i></div></div>`}).join('');
+}
+function init(){
+  load();
+  const sel=$('topic');
+  sel.innerHTML=`<option value="all">All topics (adaptive)</option>`+SKILLS.map(s=>`<option value="${s.id}">Only: ${s.name}</option>`).join('');
+  sel.value=state.topic;sel.onchange=()=>{state.topic=sel.value;save();nextQ();$('panel').classList.remove('open')};
+  $('progBtn').onclick=()=>{renderSkills();$('panel').classList.toggle('open');window.scrollTo({top:0,behavior:'smooth'})};
+  $('closePanel').onclick=()=>$('panel').classList.remove('open');
+  let armed=false;
+  $('resetBtn').onclick=()=>{if(!armed){armed=true;$('resetBtn').textContent='Tap again to reset';setTimeout(()=>{armed=false;$('resetBtn').textContent='Reset progress'},3000);return}
+    state={m:{},n:{},c:{},retry:[],topic:'all'};save();sel.value='all';armed=false;$('resetBtn').textContent='Reset progress';renderSkills();nextQ()};
+  $('nextBtn').onclick=nextQ;
+  renderSkills();nextQ();
+}
+if(typeof document!=='undefined')init();
+</script>
+</body>
+</html>
