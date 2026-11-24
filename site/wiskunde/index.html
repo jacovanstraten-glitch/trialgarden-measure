@@ -225,13 +225,13 @@ bis(){const A=P(0,8),r1=P(11,8),r2=P(8.5,0.5);const d=norm(add(norm(sub(r1,A)),n
   f.dot(Pp);lab(f,Pp,'P',5,-1,{bold:true});lab(f,A,'A',-4,0,{bold:true});lab(f,add(A,mul(d,10.5)),'bissectrice',0,-5,{c:RED,size:4.6});
   return {svg:f.svg(),cap:'De bissectrice (rood) deelt de hoek in <b>twee gelijke hoeken</b> (boogjes). Elk punt P erop ligt <b>even ver van beide benen</b>; die afstand meet je loodrecht (blauw).'}},
 zwaartelijn(){const [A,B,C]=T0,Z=centroid(A,B,C);const f=new Fig(T0);f.poly(T0);
-  [[A,B,C],[B,C,A]].forEach(([V,p,q])=>f.line(V,mid(p,q),RED,1.2,true));const M=mid(A,B);f.line(C,M,RED,3);f.ticks(A,M,1);f.ticks(M,B,1);
-  f.dot(Z);lab(f,Z,'Z',5,-1,{bold:true});lab(f,M,'midden',0,5,{c:RED,size:4.6});triBase(f,T0);
-  return {svg:f.svg(),cap:'Zwaartelijn: van hoekpunt C naar het <b>midden</b> van AB (gelijke streepjes). Niet per se loodrecht! De drie zwaartelijnen gaan door één punt: het zwaartepunt Z. Elke zwaartelijn verdeelt de driehoek in twee even zware stukken.'}},
+  [[A,B,C],[B,C,A],[C,A,B]].forEach(([V,p,q],k)=>{const M=mid(p,q);f.line(V,M,RED,2.4);f.ticks(p,M,k+1,RED);f.ticks(M,q,k+1,RED);f.dot(M,RED,1.3)});
+  f.dot(Z);lab(f,Z,'Z',5,-2,{bold:true});triBase(f,T0);
+  return {svg:f.svg(),cap:'Elke zwaartelijn gaat van een hoekpunt naar het <b>midden</b> van de overstaande zijde (gelijke streepjes). Niet per se loodrecht! De drie zwaartelijnen gaan door één punt: het zwaartepunt Z. Elke zwaartelijn verdeelt de driehoek in twee even zware stukken.'}},
 hoogtelijn(){const [A,B,C]=T0,H=orthocenter(A,B,C);const f=new Fig(T0);f.poly(T0);
-  [[A,B,C],[B,C,A]].forEach(([V,p,q])=>f.line(V,foot(V,p,q),RED,1.2,true));const F=foot(C,A,B);f.line(C,F,RED,3);f.ra(F,sub(C,F),sub(B,F),RED);
-  f.dot(H);lab(f,H,'H',5,-1,{bold:true});triBase(f,T0);
-  return {svg:f.svg(),cap:'Hoogtelijn: door hoekpunt C en <b>loodrecht</b> op de overstaande zijde AB (hoekje). Niet per se naar het midden! De drie hoogtelijnen gaan door één punt: het hoogtepunt H.'}},
+  [[A,B,C],[B,C,A],[C,A,B]].forEach(([V,p,q])=>{const F=foot(V,p,q);f.line(V,F,RED,2.4);f.ra(F,sub(V,F),sub(dist(F,q)>dist(F,p)?q:p,F),RED)});
+  f.dot(H);lab(f,H,'H',5,-2,{bold:true});triBase(f,T0);
+  return {svg:f.svg(),cap:'Elke hoogtelijn gaat door een hoekpunt en staat <b>loodrecht</b> op de overstaande zijde (hoekje van 90°). Niet per se naar het midden! De drie hoogtelijnen gaan door één punt: het hoogtepunt H.'}},
 hoogteObtuse(){const [A,B,C]=TO,H=orthocenter(A,B,C);const f=new Fig([A,B,C,H],0.16);
   [[A,B],[B,C],[C,A]].forEach(([p,q])=>f.inf(p,sub(q,p),GREY,1.2,true));f.poly(TO);
   [[A,B,C],[B,C,A],[C,A,B]].forEach(([V,p,q])=>{f.inf(V,perp(sub(q,p)),RED,1.6);const F=foot(V,p,q);f.ra(F,sub(V,F),sub(q,F),RED)});
