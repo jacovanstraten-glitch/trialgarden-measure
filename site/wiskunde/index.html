@@ -470,7 +470,7 @@ function genTap(){
 
 /* ---------- area: triangle ---------- */
 function units(even){
-  for(;;){const b=RI(3,10),h=RI(2,8);if(!even||(b*h)%2===0)return {u:'cm',b,h,e:()=>RI(1,3)}}
+  for(;;){const b=RI(3,10),h=RI(2,8);if(b!==h&&(!even||(b*h)%2===0))return {u:'cm',b,h,e:()=>RI(1,3)}}
 }
 function genOpTri(){
   const U=units(true),b=U.b,h=U.h,obtuse=Math.random()<0.4,flip=Math.random()<0.5;
@@ -485,11 +485,11 @@ function genOpTri(){
   f.vlabel(A,G,'A');f.vlabel(B,G,'B');f.vlabel(C,G,'C');
   f.text(add(mid(A,B),P(0,f.u*7)),fmt(b),{c:'#c2410c'});
   f.text(add(mid(C,F),P((obtuse?(flip?-1:1):Math.sign(B.x-F.x)||1)*f.u*5,0)),fmt(h),{c:'#2f6fde'});
-  let extra='';
+  let extra='',sl=0;
   if(obtuse){const E0=flip?A:B;f.text(add(mid(E0,F),P(0,f.u*7)),fmt(ext),{c:'#6b7280'});extra=` Het verlengde stuk (${fmt(ext)}) is alleen een hulplijn: dat tel je <b>niet</b> mee.`}
-  else{const s=Math.max(Math.round(dist(A,C)),h+1);f.sideLabel(A,C,G,fmt(s));extra=` De schuine zijde AC (${fmt(s)}) heb je niet nodig.`}
+  else{sl=Math.max(Math.round(dist(A,C)),h+1);f.sideLabel(A,C,G,fmt(sl));extra=` De schuine zijde AC (${fmt(sl)}) heb je niet nodig.`}
   const ans=b*h/2;
-  return {skill:'optri',key:'optri'+Math.random(),type:'num',prompt:`Bereken de oppervlakte van △ABC. De maten zijn in ${U.u}.`,svg:f.svg(),answer:ans,unit:U.u+'²',hints:['Zoek de hoogte (blauwe stippellijn met rechte hoek). Op welke zijde staat die loodrecht? Niet alle getallen heb je nodig.',`Opp. = ½ × ${fmt(b)} × ${fmt(h)}`],
+  return {skill:'optri',key:'optri'+Math.random(),type:'num',calc:[`½ × ${b} × ${h}`,b*h/2,obtuse?[[`½ × (${b} + ${ext}) × ${h}`,(b+ext)*h/2],[`${b} × ${h}`,b*h],[`½ × ${ext} × ${h}`,ext*h/2],[`½ × ${b} + ${h}`,b/2+h],[`${b} + ${h}`,b+h],[`(${b} + ${ext}) × ${h}`,(b+ext)*h]]:[[`${b} × ${h}`,b*h],[`½ × ${b} × ${sl}`,b*sl/2],[`½ × ${sl} × ${h}`,sl*h/2],[`${b} × ${sl}`,b*sl],[`½ × ${b} + ${h}`,b/2+h],[`${b} + ${h}`,b+h]]],prompt:`Welke berekening geeft de oppervlakte van △ABC? (maten in cm)`,svg:f.svg(),answer:ans,unit:U.u+'²',hints:['Zoek de hoogte (blauwe stippellijn met rechte hoek). Op welke zijde staat die loodrecht? Niet alle getallen heb je nodig.',`Opp. = ½ × ${fmt(b)} × ${fmt(h)}`],
     explain:`De hoogte ${fmt(h)} hoort bij zijde AB = ${fmt(b)} (ze staan loodrecht op elkaar).<br>Opp. = ½ × ${fmt(b)} × ${fmt(h)} = <b>${fmt(ans)} ${U.u}²</b>.${extra}`};
 }
 function genOpPar(){
@@ -502,7 +502,7 @@ function genOpPar(){
   f.text(add(mid(D,F),P(f.u*6,0)),fmt(h),{c:'#2f6fde'});
   const sl=Math.max(Math.round(dist(A,D)),h+1);f.sideLabel(A,D,G,fmt(sl));
   const ans=b*h;
-  return {skill:'oppar',key:'oppar'+Math.random(),type:'num',prompt:`Bereken de oppervlakte van parallellogram ABCD. De maten zijn in ${U.u}.`,svg:f.svg(),answer:ans,unit:U.u+'²',hints:['Parallellogram: zijde × hoogte (geen ½). De hoogte is de blauwe stippellijn, niet de schuine zijde.',`Opp. = ${fmt(b)} × ${fmt(h)}`],
+  return {skill:'oppar',key:'oppar'+Math.random(),type:'num',calc:[`${b} × ${h}`,b*h,[[`½ × ${b} × ${h}`,b*h/2],[`${b} × ${sl}`,b*sl],[`½ × ${b} × ${sl}`,b*sl/2],[`${b} + ${h}`,b+h]]],prompt:`Welke berekening geeft de oppervlakte van parallellogram ABCD? (maten in cm)`,svg:f.svg(),answer:ans,unit:U.u+'²',hints:['Parallellogram: zijde × hoogte (geen ½). De hoogte is de blauwe stippellijn, niet de schuine zijde.',`Opp. = ${fmt(b)} × ${fmt(h)}`],
     explain:`Opp. parallellogram = zijde × bijbehorende hoogte = ${fmt(b)} × ${fmt(h)} = <b>${fmt(ans)} ${U.u}²</b>.<br>Geen ½! En de schuine zijde (${fmt(sl)}) is <b>niet</b> de hoogte.`};
 }
 function genOpTrap(){
@@ -516,17 +516,17 @@ function genOpTrap(){
   f.text(add(mid(A,B),P(0,f.u*7)),fmt(a),{c:'#c2410c'});
   f.text(add(mid(D,C),P(0,-f.u*6)),fmt(c),{c:'#c2410c'});
   f.text(add(mid(D,F),P(right?-f.u*6:f.u*6,0)),fmt(h),{c:'#2f6fde'});
-  if(!right){const sl=Math.max(Math.round(dist(B,C)),h+1);f.sideLabel(B,C,G,fmt(sl))}
+  let sl=0;if(!right){sl=Math.max(Math.round(dist(B,C)),h+1);f.sideLabel(B,C,G,fmt(sl))}
   const ans=(a+c)*h/2;
-  return {skill:'optrap',key:'optrap'+Math.random(),type:'num',prompt:`Bereken de oppervlakte van trapezium ABCD (AB // CD). De maten zijn in ${U.u}.`,svg:f.svg(),answer:ans,unit:U.u+'²',hints:['Trapezium: ½ × (som van de twee evenwijdige zijden) × hoogte.',`Opp. = ½ × (${fmt(a)} + ${fmt(c)}) × ${fmt(h)}`],
+  return {skill:'optrap',key:'optrap'+Math.random(),type:'num',calc:[`½ × (${a} + ${c}) × ${h}`,(a+c)*h/2,[[`(${a} + ${c}) × ${h}`,(a+c)*h],[`½ × ${a} × ${h}`,a*h/2],[`${a} × ${h}`,a*h],[`½ × ${a} × ${c}`,a*c/2]].concat(sl?[[`½ × (${a} + ${c}) × ${sl}`,(a+c)*sl/2]]:[])],prompt:`Welke berekening geeft de oppervlakte van trapezium ABCD? AB en CD zijn evenwijdig. (maten in cm)`,svg:f.svg(),answer:ans,unit:U.u+'²',hints:['Trapezium: ½ × (som van de twee evenwijdige zijden) × hoogte.',`Opp. = ½ × (${fmt(a)} + ${fmt(c)}) × ${fmt(h)}`],
     explain:`Opp. trapezium = ½ × (som evenwijdige zijden) × hoogte = ½ × (${fmt(a)} + ${fmt(c)}) × ${fmt(h)} = ½ × ${fmt(a+c)} × ${fmt(h)} = <b>${fmt(ans)} ${U.u}²</b>.`};
 }
 function genTerug(){
   const v=pick(['tri','par','trap']);
-  if(v==='tri'){let z,h;do{z=RI(3,10);h=RI(2,8)}while((z*h)%2);const A=z*h/2;return {skill:'terug',key:'terug'+Math.random(),type:'num',prompt:`Een driehoek ABC heeft een oppervlakte van ${fmt(A)} cm². Zijde AB is ${z} cm. Hoe lang is de hoogte die bij AB hoort?`,answer:h,unit:'cm',hints:['Schrijf de formule op en vul in wat je weet: ½ × zijde × hoogte = oppervlakte.',`Hoogte = 2 × ${fmt(A)} ÷ ${z}`],explain:`½ × ${z} × hoogte = ${fmt(A)}, dus hoogte = 2 × ${fmt(A)} ÷ ${z} = ${fmt(2*A)} ÷ ${z} = <b>${h} cm</b>.`}}
-  if(v==='par'){const z=RI(2,10),h=RI(2,8),A=z*h;return {skill:'terug',key:'terug'+Math.random(),type:'num',prompt:`Een parallellogram heeft een oppervlakte van ${A} cm². Eén zijde is ${z} cm. Hoe lang is de hoogte die bij die zijde hoort?`,answer:h,unit:'cm',hints:['Parallellogram: zijde × hoogte = oppervlakte. Werk terug.',`Hoogte = ${A} ÷ ${z}`],explain:`${z} × hoogte = ${A}, dus hoogte = ${A} ÷ ${z} = <b>${h} cm</b>.`}}
+  if(v==='tri'){let z,h;do{z=RI(3,10);h=RI(2,8)}while((z*h)%2);const A=z*h/2;return {skill:'terug',key:'terug'+Math.random(),type:'num',calc:[`hoogte = 2 × ${fmt(A)} ÷ ${z}`,h,[[`hoogte = ${fmt(A)} ÷ ${z}`,A/z],[`hoogte = ${fmt(A)} × ${z}`,A*z],[`hoogte = ½ × ${fmt(A)} ÷ ${z}`,A/z/2],[`hoogte = ${fmt(A)} − ${z}`,A-z]]],prompt:`Driehoek ABC heeft een oppervlakte van ${fmt(A)} cm² en zijde AB = ${z} cm. Welke berekening geeft de hoogte die bij AB hoort?`,answer:h,unit:'cm',hints:['Schrijf de formule op en vul in wat je weet: ½ × zijde × hoogte = oppervlakte.',`Hoogte = 2 × ${fmt(A)} ÷ ${z}`],explain:`½ × ${z} × hoogte = ${fmt(A)}, dus hoogte = 2 × ${fmt(A)} ÷ ${z} = ${fmt(2*A)} ÷ ${z} = <b>${h} cm</b>.`}}
+  if(v==='par'){const z=RI(2,10),h=RI(2,8),A=z*h;return {skill:'terug',key:'terug'+Math.random(),type:'num',calc:[`hoogte = ${A} ÷ ${z}`,h,[[`hoogte = 2 × ${A} ÷ ${z}`,2*A/z],[`hoogte = ${A} × ${z}`,A*z],[`hoogte = ½ × ${A} ÷ ${z}`,A/z/2],[`hoogte = ${A} − ${z}`,A-z]]],prompt:`Een parallellogram heeft een oppervlakte van ${A} cm² en een zijde van ${z} cm. Welke berekening geeft de hoogte die bij die zijde hoort?`,answer:h,unit:'cm',hints:['Parallellogram: zijde × hoogte = oppervlakte. Werk terug.',`Hoogte = ${A} ÷ ${z}`],explain:`${z} × hoogte = ${A}, dus hoogte = ${A} ÷ ${z} = <b>${h} cm</b>.`}}
   let a,c,hh;do{a=RI(5,10);c=RI(2,a-2);hh=RI(2,8)}while(((a+c)*hh)%2);const A=(a+c)*hh/2;
-  return {skill:'terug',key:'terug'+Math.random(),type:'num',prompt:`Van trapezium ABCD is AB // CD, AB = ${a} cm, CD = ${c} cm en de oppervlakte is ${fmt(A)} cm². Bereken de hoogte.`,answer:hh,unit:'cm',hints:['Trapezium: ½ × (AB + CD) × hoogte = oppervlakte. Werk terug.',`Hoogte = 2 × ${fmt(A)} ÷ (${a} + ${c})`],explain:`½ × (${a} + ${c}) × hoogte = ${fmt(A)}, dus hoogte = 2 × ${fmt(A)} ÷ ${a+c} = ${fmt(2*A)} ÷ ${a+c} = <b>${fmt(hh)} cm</b>.`};
+  return {skill:'terug',key:'terug'+Math.random(),type:'num',calc:[`hoogte = 2 × ${fmt(A)} ÷ (${a} + ${c})`,hh,[[`hoogte = ${fmt(A)} ÷ (${a} + ${c})`,A/(a+c)],[`hoogte = 2 × ${fmt(A)} ÷ ${a}`,2*A/a],[`hoogte = ${fmt(A)} × (${a} + ${c}) ÷ 2`,A*(a+c)/2],[`hoogte = ${fmt(A)} ÷ ${a} ÷ ${c}`,A/a/c]]],prompt:`Trapezium ABCD: AB en CD zijn evenwijdig, AB = ${a} cm, CD = ${c} cm, oppervlakte = ${fmt(A)} cm². Welke berekening geeft de hoogte?`,answer:hh,unit:'cm',hints:['Trapezium: ½ × (AB + CD) × hoogte = oppervlakte. Werk terug.',`Hoogte = 2 × ${fmt(A)} ÷ (${a} + ${c})`],explain:`½ × (${a} + ${c}) × hoogte = ${fmt(A)}, dus hoogte = 2 × ${fmt(A)} ÷ ${a+c} = ${fmt(2*A)} ÷ ${a+c} = <b>${fmt(hh)} cm</b>.`};
 }
 function genCoord(){
   let x1,y1,y2,x3,y3;
@@ -544,7 +544,7 @@ function genCoord(){
   const L=Math.abs(y2-y1),H=Math.abs(x3-x1);
   const ans=L*H/2;
   const cs=p.map(([x,y],i)=>`${names[i]}(${x}, ${y})`).join(', ');
-  return {skill:'coord',key:'coord'+Math.random(),type:'num',prompt:`Bereken de oppervlakte van △PQR met ${cs}. De roostervierkantjes zijn 1 bij 1 cm.`,svg:f.svg(),answer:ans,unit:'cm²',hints:[`Welke twee punten hebben dezelfde ${horiz?'y':'x'}-coördinaat? Die zijde kun je gewoon tellen.`,`De zijde is ${L} hokjes. De hoogte is de afstand van het derde punt tot die zijde, recht geteld.`],
+  return {skill:'coord',key:'coord'+Math.random(),type:'num',calc:[`½ × ${L} × ${H}`,L*H/2,[[`${L} × ${H}`,L*H],[`½ × ${L} × ${H+1}`,L*(H+1)/2],[`½ × ${L+1} × ${H}`,(L+1)*H/2],[`½ × ${L} × ${H-1}`,L*(H-1)/2]]],prompt:`△PQR heeft de punten ${cs}. Elk hokje is 1 bij 1 cm. Welke berekening geeft de oppervlakte?`,svg:f.svg(),answer:ans,unit:'cm²',hints:[`Welke twee punten hebben dezelfde ${horiz?'y':'x'}-coördinaat? Die zijde kun je gewoon tellen.`,`De zijde is ${L} hokjes. De hoogte is de afstand van het derde punt tot die zijde, recht geteld.`],
     explain:`PQ loopt ${horiz?'horizontaal (zelfde y)':'verticaal (zelfde x)'}, dus PQ = ${L}. De hoogte bij PQ is de ${horiz?'verticale':'horizontale'} afstand van R tot die lijn = ${H}.<br>Opp. = ½ × ${L} × ${H} = <b>${fmt(ans)} cm²</b>.`};
 }
 function genSamen(){
@@ -555,7 +555,7 @@ function genSamen(){
     f.text(P(W/2,f.u*7),W,{c:'#c2410c'});f.text(P(-f.u*6,-H/2),H,{c:'#c2410c'});
     f.text(P((W-w)/2,-H-f.u*6),W-w,{c:'#c2410c'});f.text(P(W+f.u*6,-(H-hh)/2),H-hh,{c:'#c2410c'});
     const ans=W*H-w*hh;
-    return {skill:'samen',key:'samen'+Math.random(),type:'num',prompt:'Bereken de oppervlakte van deze figuur. Alle hoeken zijn recht. De maten zijn in cm.',svg:f.svg(),answer:ans,unit:'cm²',hints:['Maak er in gedachten één grote rechthoek van en haal het ontbrekende hoekje eraf.',`Grote rechthoek = ${W} × ${H}. Hoe breed en hoog is het hoekje? Trek de maten van elkaar af.`],
+    return {skill:'samen',key:'samen'+Math.random(),type:'num',calc:[`${W} × ${H} − ${w} × ${hh}`,W*H-w*hh,[[`${W} × ${H} + ${w} × ${hh}`,W*H+w*hh],[`${W} × ${H} − ${W-w} × ${H-hh}`,W*H-(W-w)*(H-hh)],[`${W} × ${H}`,W*H],[`${W-w} × ${H-hh}`,(W-w)*(H-hh)]]],prompt:'Alle hoeken zijn recht (maten in cm). Welke berekening geeft de oppervlakte van deze figuur?',svg:f.svg(),answer:ans,unit:'cm²',hints:['Maak er in gedachten één grote rechthoek van en haal het ontbrekende hoekje eraf.',`Grote rechthoek = ${W} × ${H}. Hoe breed en hoog is het hoekje? Trek de maten van elkaar af.`],
       explain:`<b>Stukje toevoegen:</b> grote rechthoek ${W} × ${H} = ${W*H}. Het ontbrekende hoekje is ${W} − ${W-w} = ${w} breed en ${H} − ${H-hh} = ${hh} hoog, dus ${w*hh}.<br>Opp. = ${W*H} − ${w*hh} = <b>${ans} cm²</b>.<br>(Splitsen kan ook: ${W-w} × ${H} + ${w} × ${H-hh} = ${(W-w)*H} + ${w*(H-hh)} = ${ans}.)`};
   }
   const W=2*RI(2,5),H1=RI(2,6),H2=RI(2,5),ax=W*R(0.3,0.7);
@@ -564,13 +564,23 @@ function genSamen(){
   f.line(P(ax,-H1-H2),P(ax,-H1),'#2f6fde',2,true);f.ra(P(ax,-H1),P(0,-1),P(1,0),'#2f6fde');
   f.text(P(W/2,f.u*7),W,{c:'#c2410c'});f.text(P(-f.u*6,-H1/2),H1,{c:'#c2410c'});f.text(P(ax+f.u*6,-H1-H2/2),H2,{c:'#2f6fde'});
   const ans=W*H1+W*H2/2;
-  return {skill:'samen',key:'samen'+Math.random(),type:'num',prompt:'Bereken de oppervlakte van deze figuur (een rechthoek met een driehoek erop). De maten zijn in cm.',svg:f.svg(),answer:ans,unit:'cm²',hints:['Splits de figuur in een rechthoek en een driehoek.',`Rechthoek ${W} × ${H1}, driehoek ½ × ${W} × ${H2}. Tel ze op.`],
+  return {skill:'samen',key:'samen'+Math.random(),type:'num',calc:[`${W} × ${H1} + ½ × ${W} × ${H2}`,ans,[[`${W} × ${H1} + ${W} × ${H2}`,W*H1+W*H2],[`½ × ${W} × (${H1} + ${H2})`,W*(H1+H2)/2],[`${W} × ${H1}`,W*H1],[`${W} × ${H1} − ½ × ${W} × ${H2}`,W*H1-W*H2/2]]],prompt:'Een rechthoek met een driehoek erop (maten in cm). Welke berekening geeft de oppervlakte?',svg:f.svg(),answer:ans,unit:'cm²',hints:['Splits de figuur in een rechthoek en een driehoek.',`Rechthoek ${W} × ${H1}, driehoek ½ × ${W} × ${H2}. Tel ze op.`],
     explain:`<b>Splitsen:</b> rechthoek ${W} × ${H1} = ${W*H1}. Driehoek: zijde ${W}, hoogte ${H2}, dus ½ × ${W} × ${H2} = ${fmt(W*H2/2)}.<br>Opp. = ${W*H1} + ${fmt(W*H2/2)} = <b>${fmt(ans)} cm²</b>.`};
 }
 
 
 
+function toCalcMC(q){
+  if(!q||!q.calc)return q;
+  const [good,val,wr]=q.calc;const seen=new Set([good]),vals=[val];const opts=[good];
+  for(const [str,v] of shuffle(wr)){if(opts.length>=4)break;if(seen.has(str)||vals.some(x=>Math.abs(x-v)<1e-9))continue;seen.add(str);vals.push(v);opts.push(str)}
+  const o=shuffle(opts);
+  q.type='mc';q.options=o;q.answerIndex=o.indexOf(good);
+  if(q.hints&&q.hints.length>1)q.hints=[q.hints[0]];
+  return q;
+}
 const GEN={mll:()=>genBank('mll'),bis:()=>genBank('bis'),zh:()=>genBank('zh'),kleur:()=>genBank('kleur'),theorie:()=>genBank('theorie'),herken:genHerken,tap:genTap,optri:genOpTri,oppar:genOpPar,optrap:genOpTrap,terug:genTerug,coord:genCoord,samen:genSamen};
+for(const k of ['optri','oppar','optrap','terug','coord','samen']){const g=GEN[k];GEN[k]=()=>toCalcMC(g())}
 const THEORY=['mll','bis','zh','kleur','herken','tap','theorie'];
 const CALC=['optri','oppar','optrap','terug','coord','samen'];
 
