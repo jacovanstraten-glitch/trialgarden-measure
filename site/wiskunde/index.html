@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="nl">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#f6f4ef">
-<title>Math Trainer – Chapter 2</title>
+<title>Wiskunde-trainer – Hoofdstuk 2</title>
 <style>
 :root{--bg:#f6f4ef;--card:#fff;--ink:#1d2433;--mute:#6b7280;--line:#e6e1d6;--accent:#2f6fde;--ok:#1f9d55;--okbg:#e7f6ed;--bad:#d64545;--badbg:#fdecec;--fig:#fbeec7;--hint:#fff8e1}
 *{box-sizing:border-box}
@@ -75,21 +75,21 @@ h3{margin:0 0 6px;font-size:16px}
 </head>
 <body>
 <header><div class="hrow">
-  <div class="title">Math Trainer · Ch. 2</div>
+  <div class="title">Wiskunde-trainer · H2</div>
   <div class="stats" id="stats">0/0</div>
-  <button class="btn" id="progBtn">Progress</button>
+  <button class="btn" id="progBtn">Voortgang</button>
 </div></header>
 <main>
   <section class="card panel" id="panel">
-    <h3>Practice</h3>
+    <h3>Oefenen</h3>
     <select class="sel" id="topic"></select>
-    <h3>Mastery per topic</h3>
-    <div class="small" style="margin-bottom:6px">Topics with lower mastery come up more often. Mistakes come back a few questions later. A correct answer after a hint counts for less.</div>
+    <h3>Beheersing per onderwerp</h3>
+    <div class="small" style="margin-bottom:6px">Onderwerpen die je minder goed beheerst, komen vaker langs. Foute vragen komen een paar vragen later terug. Een goed antwoord na een hint telt minder mee.</div>
     <div id="skills"></div>
     <div id="histwrap" style="margin-top:12px"></div>
     <div class="row">
-      <button class="btn" id="closePanel">Back to questions</button>
-      <button class="btn" id="resetBtn">Reset progress</button>
+      <button class="btn" id="closePanel">Terug naar de vragen</button>
+      <button class="btn" id="resetBtn">Voortgang wissen</button>
     </div>
   </section>
   <section class="card ready" id="ready"></section>
@@ -102,8 +102,8 @@ h3{margin:0 0 6px;font-size:16px}
     <button class="btn hintbtn" id="hintBtn">💡 Hint</button>
     <div class="hints" id="hints"></div>
     <div class="fb" id="fb"></div>
-    <button class="btn primary next" id="nextBtn">Next question</button>
-    <div class="row" id="testctl" style="display:none"><button class="btn" id="quitBtn">Quit test</button></div>
+    <button class="btn primary next" id="nextBtn">Volgende vraag</button>
+    <div class="row" id="testctl" style="display:none"><button class="btn" id="quitBtn">Toets stoppen</button></div>
   </section>
   <section class="card panel" id="result"></section>
 </main>
@@ -484,7 +484,7 @@ function genOpTri(){
   f.line(C,F,'#2f6fde',2,true);f.ra(F,sub(C,F),sub(mid(A,B),F),'#2f6fde');
   f.vlabel(A,G,'A');f.vlabel(B,G,'B');f.vlabel(C,G,'C');
   f.text(add(mid(A,B),P(0,f.u*7)),fmt(b),{c:'#c2410c'});
-  f.text(add(mid(C,F),P((flip?-1:1)*(obtuse?1:-1)*f.u*6,0)),fmt(h),{c:'#2f6fde'});
+  f.text(add(mid(C,F),P((obtuse?(flip?-1:1):Math.sign(B.x-F.x)||1)*f.u*5,0)),fmt(h),{c:'#2f6fde'});
   let extra='';
   if(obtuse){const E0=flip?A:B;f.text(add(mid(E0,F),P(0,f.u*7)),fmt(ext),{c:'#6b7280'});extra=` Het verlengde stuk (${fmt(ext)}) is alleen een hulplijn: dat tel je <b>niet</b> mee.`}
   else{const s=Math.max(Math.round(dist(A,C)),h+1);f.sideLabel(A,C,G,fmt(s));extra=` De schuine zijde AC (${fmt(s)}) heb je niet nodig.`}
@@ -623,8 +623,8 @@ function render(){
   $('progBtn').style.display=inTest?'none':'inline-block';
   $('testctl').style.display=inTest?'flex':'none';
   $('tprog').style.display=inTest?'block':'none';
-  if(inTest){$('chip').textContent=`Test · Question ${test.i+1} of ${test.qs.length}`;$('chip').className='chip test';$('tprog').firstChild.style.width=(test.i/test.qs.length*100)+'%'}
-  else{$('chip').textContent=(q.retry?'Again: ':'')+SK[q.skill].name;$('chip').className='chip'+(q.retry?' retry':'')}
+  if(inTest){$('chip').textContent=`Toets · Vraag ${test.i+1} van ${test.qs.length}`;$('chip').className='chip test';$('tprog').firstChild.style.width=(test.i/test.qs.length*100)+'%'}
+  else{$('chip').textContent=(q.retry?'Nog een keer: ':'')+SK[q.skill].name;$('chip').className='chip'+(q.retry?' retry':'')}
   $('prompt').textContent=q.prompt;
   $('figwrap').innerHTML=q.svg||'';
   $('fb').className='fb';$('fb').innerHTML='';$('hints').innerHTML='';
@@ -636,7 +636,7 @@ function render(){
     q.options.forEach((t,i)=>{const b=document.createElement('button');b.className='opt';b.textContent=t;b.onclick=()=>onMC(i,b);box.appendChild(b)});
     a.appendChild(box);
   }else if(q.type==='num'){
-    a.innerHTML=`<div class="numrow"><input id="num" inputmode="decimal" autocomplete="off" placeholder="Your answer"><span class="unit">${q.unit}</span><button class="btn primary" id="chk">${inTest?'Next':'Check'}</button></div>`;
+    a.innerHTML=`<div class="numrow"><input id="num" inputmode="decimal" autocomplete="off" placeholder="Jouw antwoord"><span class="unit">${q.unit}</span><button class="btn primary" id="chk">${inTest?'Volgende':'Controleer'}</button></div>`;
     $('chk').onclick=onNum;$('num').addEventListener('keydown',e=>{if(e.key==='Enter')onNum()});
   }else if(q.type==='tap'){
     const svg=$('figwrap').querySelector('svg');
@@ -650,7 +650,7 @@ function showHint(){
   cur.hintsUsed++;
   const d=document.createElement('div');d.className='hintbox';d.innerHTML=`<b>Hint ${i+1}:</b> ${cur.hints[i]}`;$('hints').appendChild(d);
   const hb=$('hintBtn');
-  if(cur.hintsUsed<cur.hints.length)hb.textContent='💡 Another hint';else{hb.textContent='No more hints';hb.disabled=true}
+  if(cur.hintsUsed<cur.hints.length)hb.textContent='💡 Nog een hint';else{hb.textContent='Geen hints meer';hb.disabled=true}
 }
 /* answer handlers */
 function parseNum(s){const v=parseFloat(s.replace(',','.').replace(/[^0-9.\-]/g,''));return isNaN(v)?null:v}
@@ -667,7 +667,7 @@ function onNum(){
   const ok=numOk(v,cur.answer);
   $('num').disabled=true;$('chk').disabled=true;
   if(mode==='test'){answered=true;testAnswer(ok,v);return}
-  finish(ok,(ok?'':`You answered ${fmt(v)}. `)+cur.explain);
+  finish(ok,(ok?'':`Jij antwoordde ${fmt(v)}. `)+cur.explain);
 }
 function drawTapReveal(q,p){
   const f=q.fig;q.reveal(f);f.dot(q.target,'#1f9d55',2.6);
@@ -685,29 +685,29 @@ function finish(ok,html){
   session.n++;if(ok){session.c++;session.streak++}else session.streak=0;
   $('hintBtn').style.display='none';
   const fb=$('fb');fb.className='fb '+(ok?'ok':'bad');
-  const v=ok?(hinted?'Correct, with a hint.':pick(['Correct!','Well done!','Right!'])):'Not quite.';
+  const v=ok?(hinted?'Goed, met een hint.':pick(['Goed zo!','Helemaal goed!','Klopt!'])):'Helaas, niet goed.';
   fb.innerHTML=`<b class="v">${v}</b>${html}`;
   $('nextBtn').style.display='block';updStats();renderSkills();renderReady();
   $('nextBtn').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
-function updStats(){$('stats').textContent=mode==='test'?'Test':`${session.c}/${session.n}`+(session.streak>=3?` · 🔥${session.streak}`:'')}
+function updStats(){$('stats').textContent=mode==='test'?'Toets':`${session.c}/${session.n}`+(session.streak>=3?` · 🔥${session.streak}`:'')}
 function color(m){return m>=0.85?'#1f9d55':m>=0.6?'#7cb342':m>=0.4?'#e8a33d':'#d64545'}
 function renderSkills(){
   $('skills').innerHTML=SKILLS.map(s=>{const m=mast(s.id),n=state.n[s.id]||0,c=state.c[s.id]||0,rd=skillReady(s.id)>=0.999;
-    return `<div class="sk"><div>${s.name}${rd?' ✓':''}<div class="small">${n?`${c}/${n} correct`:'Not practised yet'}</div></div><div class="pct">${n?Math.round(m*100)+'%':'–'}</div><div class="bar"><i style="width:${n?Math.round(m*100):0}%;background:${color(m)}"></i></div></div>`}).join('');
+    return `<div class="sk"><div>${s.name}${rd?' ✓':''}<div class="small">${n?`${c}/${n} goed`:'Nog niet geoefend'}</div></div><div class="pct">${n?Math.round(m*100)+'%':'–'}</div><div class="bar"><i style="width:${n?Math.round(m*100):0}%;background:${color(m)}"></i></div></div>`}).join('');
   const h=state.tests.slice(-8).reverse();
-  $('histwrap').innerHTML=h.length?`<h3>Test results</h3>`+h.map(t=>`<div class="hist"><span>${t.date}</span><span>${t.score}/${t.total} · grade <b>${t.grade}</b></span></div>`).join(''):'';
+  $('histwrap').innerHTML=h.length?`<h3>Toetsresultaten</h3>`+h.map(t=>`<div class="hist"><span>${t.date}</span><span>${t.score}/${t.total} · cijfer <b>${t.grade}</b></span></div>`).join(''):'';
 }
 function renderReady(){
   if(mode!=='practice')return;
   const {pct,ready}=readiness();const el=$('ready');
   el.className='card ready'+(ready?' done':'');
   if(ready){
-    el.innerHTML=`<div class="top"><b>🎓 Ready for the test!</b></div><div class="small" style="color:var(--ink)">${TEST_LEN} questions on all topics. No hints, and no answers until the end. You get a grade at the end.</div><button class="btn go" id="startTest">Start test</button>`;
+    el.innerHTML=`<div class="top"><b>🎓 Klaar voor de toets!</b></div><div class="small" style="color:var(--ink)">${TEST_LEN} vragen over alle onderwerpen. Geen hints, en pas aan het eind zie je wat goed was. Je krijgt een cijfer.</div><button class="btn go" id="startTest">Start de toets</button>`;
     $('startTest').onclick=startTest;
   }else{
     const weak=SKILLS.filter(s=>skillReady(s.id)<0.999).sort((a,b)=>skillReady(a.id)-skillReady(b.id)).slice(0,2).map(s=>s.name);
-    el.innerHTML=`<div class="top"><b>🔒 Test readiness</b><span class="pct">${Math.round(pct*100)}%</span></div><div class="bar"><i style="width:${Math.round(pct*100)}%;background:${color(pct)}"></i></div><div class="small">The test unlocks when every topic has been practised enough. Still to do: ${weak.join(', ')}${SKILLS.filter(s=>skillReady(s.id)<0.999).length>2?' and more':''}.</div>`;
+    el.innerHTML=`<div class="top"><b>🔒 Klaar voor de toets?</b><span class="pct">${Math.round(pct*100)}%</span></div><div class="bar"><i style="width:${Math.round(pct*100)}%;background:${color(pct)}"></i></div><div class="small">De toets gaat open als je elk onderwerp genoeg hebt geoefend. Nog te doen: ${weak.join(', ')}${SKILLS.filter(s=>skillReady(s.id)<0.999).length>2?' en meer':''}.</div>`;
   }
 }
 
@@ -739,15 +739,15 @@ function endTest(){
     let fig='',your='',right='';
     if(q.type==='mc'){fig=q.svg||'';your=g==null?'–':q.options[g];right=q.options[q.answerIndex]}
     if(q.type==='num'){fig=q.svg||'';your=g==null?'–':fmt(g)+' '+q.unit;right=fmt(q.answer)+' '+q.unit}
-    if(q.type==='tap'){fig=ok?'':drawTapReveal(q,g);your=ok?'tapped the right spot':'blue cross';right='green point'}
-    return `<div class="rv"><div class="h"><span class="mark">${ok?'✅':'❌'}</span><span>${i+1}. ${q.prompt}</span></div>${ok?'':fig}<div class="ans">${ok?'':`Your answer: <b>${your}</b><br>`}Correct: <b>${right}</b></div>${ok?'':`<div class="ex">${q.explain}</div>`}</div>`;
+    if(q.type==='tap'){fig=ok?'':drawTapReveal(q,g);your=ok?'goed getikt':'blauw kruisje';right='groene punt'}
+    return `<div class="rv"><div class="h"><span class="mark">${ok?'✅':'❌'}</span><span>${i+1}. ${q.prompt}</span></div>${ok?'':fig}<div class="ans">${ok?'':`Jouw antwoord: <b>${your}</b><br>`}Goed antwoord: <b>${right}</b></div>${ok?'':`<div class="ex">${q.explain}</div>`}</div>`;
   }).join('');
   const wrongSkills=[...new Set(test.qs.filter((q,i)=>!test.ok[i]).map(q=>SK[q.skill].name))];
-  $('result').innerHTML=`<span class="chip test">Test result</span><div class="grade ${pass?'pass':'fail'}">${fmt(grade)}</div><div style="font-weight:600">${score} of ${total} correct${pass?' – passed! 🎉':' – keep practising'}</div>
-    ${wrongSkills.length?`<div class="small" style="margin-top:6px">Practise these topics again: ${wrongSkills.join(', ')}. They will come up more often now.</div>`:'<div class="small" style="margin-top:6px">Perfect score!</div>'}
-    <div class="row"><button class="btn primary" id="backPractice">Back to practice</button></div>
-    <h3 style="margin-top:16px">Review</h3>${rows}
-    <div class="row"><button class="btn primary" id="backPractice2">Back to practice</button></div>`;
+  $('result').innerHTML=`<span class="chip test">Toetsuitslag</span><div class="grade ${pass?'pass':'fail'}">${fmt(grade)}</div><div style="font-weight:600">${score} van de ${total} goed${pass?' – voldoende! 🎉':' – blijf oefenen'}</div>
+    ${wrongSkills.length?`<div class="small" style="margin-top:6px">Oefen deze onderwerpen nog eens: ${wrongSkills.join(', ')}. Ze komen nu vaker langs.</div>`:'<div class="small" style="margin-top:6px">Alles goed, knap gedaan!</div>'}
+    <div class="row"><button class="btn primary" id="backPractice">Terug naar oefenen</button></div>
+    <h3 style="margin-top:16px">Nabespreking</h3>${rows}
+    <div class="row"><button class="btn primary" id="backPractice2">Terug naar oefenen</button></div>`;
   $('result').classList.add('open');
   $('backPractice').onclick=$('backPractice2').onclick=()=>{mode='practice';test=null;$('result').classList.remove('open');nextQ();window.scrollTo({top:0})};
   window.scrollTo({top:0});renderSkills();
@@ -756,17 +756,17 @@ function endTest(){
 function init(){
   load();
   const sel=$('topic');
-  sel.innerHTML=`<option value="all">All topics (adaptive)</option><option value="theory">Theory only</option><option value="calc">Calculations only</option>`+SKILLS.map(s=>`<option value="${s.id}">Only: ${s.name}</option>`).join('');
+  sel.innerHTML=`<option value="all">Alle onderwerpen (slim oefenen)</option><option value="theory">Alleen theorie</option><option value="calc">Alleen rekenen</option>`+SKILLS.map(s=>`<option value="${s.id}">Alleen: ${s.name}</option>`).join('');
   sel.value=state.topic;sel.onchange=()=>{state.topic=sel.value;save();$('panel').classList.remove('open');nextQ()};
   $('progBtn').onclick=()=>{renderSkills();$('panel').classList.toggle('open');window.scrollTo({top:0,behavior:'smooth'})};
   $('closePanel').onclick=()=>$('panel').classList.remove('open');
   $('hintBtn').onclick=showHint;
   let armed=false;
-  $('resetBtn').onclick=()=>{if(!armed){armed=true;$('resetBtn').textContent='Tap again to reset';setTimeout(()=>{armed=false;$('resetBtn').textContent='Reset progress'},3000);return}
-    state={m:{},n:{},c:{},retry:[],topic:'all',tests:[]};save();sel.value='all';armed=false;$('resetBtn').textContent='Reset progress';renderSkills();nextQ()};
+  $('resetBtn').onclick=()=>{if(!armed){armed=true;$('resetBtn').textContent='Tik nog een keer om te wissen';setTimeout(()=>{armed=false;$('resetBtn').textContent='Voortgang wissen'},3000);return}
+    state={m:{},n:{},c:{},retry:[],topic:'all',tests:[]};save();sel.value='all';armed=false;$('resetBtn').textContent='Voortgang wissen';renderSkills();nextQ()};
   let qarmed=false;
-  $('quitBtn').onclick=()=>{if(!qarmed){qarmed=true;$('quitBtn').textContent='Tap again to quit (no grade)';setTimeout(()=>{qarmed=false;$('quitBtn').textContent='Quit test'},3000);return}
-    qarmed=false;$('quitBtn').textContent='Quit test';mode='practice';test=null;nextQ()};
+  $('quitBtn').onclick=()=>{if(!qarmed){qarmed=true;$('quitBtn').textContent='Tik nog een keer om te stoppen (geen cijfer)';setTimeout(()=>{qarmed=false;$('quitBtn').textContent='Toets stoppen'},3000);return}
+    qarmed=false;$('quitBtn').textContent='Toets stoppen';mode='practice';test=null;nextQ()};
   $('nextBtn').onclick=nextQ;
   renderSkills();nextQ();
 }
